@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TripZone 요구사항 명세서</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/site.css" />
+  </head>
+  <body>
+    <header class="floating-header">
+      <div class="floating-header-inner">
+        <div class="brand"><span class="brand-mark"></span><span>TripZone 요구사항 명세서</span></div>
+        <nav class="nav">
+          <a href="../index.html">홈</a>
+          <a class="active" href="./requirements.html">요구사항</a>
+          <a href="./features.html">기능</a>
+          <a href="./structure.html">구조</a>
+          <a href="./database.html">DB</a>
+        </nav>
+      </div>
+    </header>
+    <main class="shell doc-layout">
+      <aside class="doc-sidebar">
+        <div class="sidebar-card">
+          <h2>문서 개요</h2>
+          <p>프로젝트 목적, 사용자 구분, 핵심 요구사항, 비기능 요구사항을 설계 기준으로 정리한 제출용 문서.</p>
+          <nav class="sidebar-nav">
+            <a class="active" href="#overview">프로젝트 개요</a>
+            <a href="#actors">사용자 구분</a>
+            <a href="#requirements">핵심 요구사항</a>
+            <a href="#nonfunctional">비기능 요구사항</a>
+            <a href="#references">기준 문서</a>
+          </nav>
+        </div>
+      </aside>
+      <div class="doc-main">
+        <section class="content-block" id="overview">
+          <p class="eyebrow">Overview</p>
+          <h2>프로젝트 개요</h2>
+          <div class="pill-row">
+            <span class="pill">프로젝트명: TripZone</span>
+            <span class="pill">유형: 숙소 예약 플랫폼</span>
+            <span class="pill">목표: 설계 기준 고정</span>
+          </div>
+          <p>
+            TripZone은 사용자가 숙소를 탐색하고 예약, 결제, 리뷰, 문의까지 처리할 수 있는 통합 서비스다.
+            이번 문서는 현재 구현 데모와 분리해서, 설계 기준만을 제출용으로 정리한 요구사항 기준서다.
+          </p>
+          <div class="notice">
+            이 문서는 <span class="code-chip">com.kh.trip</span> 루트 패키지 기준과 최신 설계 문서를 바탕으로 작성했다.
+          </div>
+        </section>
+
+        <section class="content-block" id="actors">
+          <p class="eyebrow">Actors</p>
+          <h2>사용자 구분</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>구분</th><th>주요 역할</th><th>핵심 기능</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>일반 회원</td><td>숙소 이용자</td><td>회원가입, 로그인, 검색, 예약, 결제, 리뷰, 찜, 문의</td></tr>
+                <tr><td>판매자</td><td>숙소 운영자</td><td>판매자 신청, 숙소/객실 관리, 예약 처리, 문의 응답</td></tr>
+                <tr><td>관리자</td><td>플랫폼 운영자</td><td>회원/판매자 관리, 이벤트/쿠폰 관리, 문의 모니터링, 운영 로그 확인</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-block" id="requirements">
+          <p class="eyebrow">Requirements</p>
+          <h2>핵심 요구사항</h2>
+          <h3>회원</h3>
+          <ul>
+            <li>회원은 이메일 기준으로 고유해야 한다.</li>
+            <li>회원은 일반, 판매자, 관리자 권한을 가질 수 있어야 한다.</li>
+            <li>로그인 방식은 일반 로그인과 소셜 로그인 확장 가능 구조여야 한다.</li>
+          </ul>
+          <h3>판매자</h3>
+          <ul>
+            <li>판매자는 일반 회원 확장 개념이다.</li>
+            <li>판매자는 승인 전까지 숙소 운영 권한이 없다.</li>
+            <li>판매자 상태는 승인 대기, 승인, 반려, 중지로 관리한다.</li>
+          </ul>
+          <h3>숙소/객실</h3>
+          <ul>
+            <li>판매자는 숙소와 객실을 등록할 수 있어야 한다.</li>
+            <li>숙소와 객실은 운영 상태를 가져야 한다.</li>
+            <li>숙소 상세에는 이미지, 설명, 체크인/체크아웃 정보가 포함되어야 한다.</li>
+          </ul>
+          <h3>예약/결제</h3>
+          <ul>
+            <li>예약은 객실 단위로 생성한다.</li>
+            <li>예약 시 숙박일, 인원수, 가격, 할인, 총 결제금액이 저장되어야 한다.</li>
+            <li>결제 상태는 준비, 결제완료, 실패, 취소, 부분취소, 환불을 지원한다.</li>
+          </ul>
+          <h3>리뷰 / 찜 / 문의 / 혜택</h3>
+          <ul>
+            <li>리뷰는 숙박 완료 예약에 대해서만 작성 가능해야 한다.</li>
+            <li>동일 회원이 동일 숙소를 중복 찜할 수 없어야 한다.</li>
+            <li>문의는 채팅형 구조를 기준으로 한다.</li>
+            <li>회원은 보유 쿠폰과 마일리지를 예약 시 사용할 수 있어야 한다.</li>
+          </ul>
+        </section>
+
+        <section class="content-block" id="nonfunctional">
+          <p class="eyebrow">Non-functional</p>
+          <h2>비기능 요구사항</h2>
+          <div class="card-grid">
+            <div class="list-card">
+              <h3>운영성</h3>
+              <ul>
+                <li>주요 상태 변경은 추적 가능해야 한다.</li>
+                <li>삭제는 기본적으로 상태 변경 또는 soft-delete 기반으로 처리한다.</li>
+              </ul>
+            </div>
+            <div class="list-card">
+              <h3>정합성</h3>
+              <ul>
+                <li>데이터 정합성은 DB 제약조건과 서비스 검증을 함께 사용한다.</li>
+                <li>운영용 조회 성능을 위해 주요 검색 조건에 인덱스가 필요하다.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-block" id="references">
+          <p class="eyebrow">References</p>
+          <h2>기준 문서</h2>
+          <ul>
+            <li><span class="code-chip">tripzone-company-spec.md</span></li>
+            <li><span class="code-chip">tripzone-structure-spec-v2.md</span></li>
+            <li><span class="code-chip">tripzone-ddl-v2.sql</span></li>
+          </ul>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

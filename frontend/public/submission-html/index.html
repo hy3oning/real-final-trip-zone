@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TripZone Design Deliverables</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/site.css" />
+  </head>
+  <body>
+    <header class="floating-header">
+      <div class="floating-header-inner">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <span>TripZone 설계 기준 산출물</span>
+        </div>
+        <nav class="nav">
+          <a class="active" href="./index.html">홈</a>
+          <a href="./docs/requirements.html">요구사항</a>
+          <a href="./docs/features.html">기능</a>
+          <a href="./docs/structure.html">구조</a>
+          <a href="./docs/database.html">DB</a>
+          <a href="./presentation/index.html">발표자료</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="hero">
+        <div class="hero-card">
+          <div>
+            <p class="eyebrow">Final Design Package</p>
+            <h1>설계 기준 전용 제출물과 발표 자료를 분리한 최종 패키지</h1>
+            <p>
+              이 산출물은 기존 demo 구현과 분리해서, 현재 고정된 설계 기준만으로 다시 정리한
+              제출용 HTML 세트다. 루트 패키지명, 도메인 구조, DB 상태값, 문의 모델 같은 중요한
+              기준은 설계서에 맞춰 고정했다.
+            </p>
+            <div class="hero-metrics">
+              <div class="metric">
+                <strong>4</strong>
+                <span>제출용 명세서 HTML</span>
+              </div>
+              <div class="metric">
+                <strong>1</strong>
+                <span>발표용 PPT HTML</span>
+              </div>
+              <div class="metric">
+                <strong>com.kh.trip</strong>
+                <span>루트 패키지 기준 고정</span>
+              </div>
+            </div>
+          </div>
+          <div class="hero-panel">
+            <div class="glass-card">
+              <strong>고정 기준</strong>
+              <p>구조명세서는 <span class="code-chip">com.kh.trip</span>, 문의는 <span class="code-chip">InquiryRoom / InquiryMessage</span>, DB는 최신 DDL 기준으로 정리했다.</p>
+            </div>
+            <div class="glass-card">
+              <strong>재사용 범위</strong>
+              <p>trip-demo에서는 발표 스타일 감각과 슬라이드 인터랙션만 추출했다. 내용과 산출물 구조는 새로 구성했다.</p>
+            </div>
+            <div class="glass-card">
+              <strong>사용 목적</strong>
+              <p>제출용 명세서, 발표용 HTML, 인쇄/PDF 변환용 중간 결과물로 바로 사용할 수 있다.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Submission Set</p>
+            <h2 class="section-title">명세서 HTML</h2>
+          </div>
+          <p class="section-subtitle">문서형 레이아웃과 인쇄 대응을 고려한 제출용 페이지</p>
+        </div>
+        <div class="card-grid">
+          <a class="doc-card" href="./docs/requirements.html">
+            <strong>요구사항 명세서</strong>
+            <p>프로젝트 목적, 사용자 구분, 핵심 요구사항, 비기능 요구사항을 정리한 제출용 문서.</p>
+            <div class="tag-row">
+              <span class="tag">범위</span>
+              <span class="tag">역할</span>
+              <span class="tag">핵심 요구</span>
+            </div>
+          </a>
+          <a class="doc-card" href="./docs/features.html">
+            <strong>기능 명세서</strong>
+            <p>회원, 판매자, 숙소, 예약, 결제, 리뷰, 문의, 운영 기능을 기능 단위로 정리한 문서.</p>
+            <div class="tag-row">
+              <span class="tag">기능 분해</span>
+              <span class="tag">상태</span>
+              <span class="tag">관리</span>
+            </div>
+          </a>
+          <a class="doc-card" href="./docs/structure.html">
+            <strong>구조 명세서</strong>
+            <p>루트 패키지명과 레이어 구조, 도메인별 클래스 구성을 설계 기준으로 재정리한 문서.</p>
+            <div class="tag-row">
+              <span class="tag">com.kh.trip</span>
+              <span class="tag">레이어</span>
+              <span class="tag">도메인</span>
+            </div>
+          </a>
+          <a class="doc-card" href="./docs/database.html">
+            <strong>DB 명세서</strong>
+            <p>주요 테이블, 관계, 상태값, 정합성 규칙을 제출용 형태로 요약한 문서.</p>
+            <div class="tag-row">
+              <span class="tag">DDL 기준</span>
+              <span class="tag">관계</span>
+              <span class="tag">상태값</span>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Presentation</p>
+            <h2 class="section-title">발표용 HTML Deck</h2>
+          </div>
+          <p class="section-subtitle">trip-demo의 좋은 발표 감각은 가져오고, 내용은 설계 기준으로 교체한 슬라이드</p>
+        </div>
+        <div class="card-grid">
+          <div class="list-card">
+            <h3>포함 내용</h3>
+            <ul>
+              <li>프로젝트 개요와 문제 정의</li>
+              <li>3-role 구조와 패키지 기준</li>
+              <li>문의 구조 변경과 DB 상태 모델</li>
+              <li>프론트 우선 구현 범위와 최소 백엔드 고정점</li>
+            </ul>
+          </div>
+          <div class="list-card">
+            <h3>사용 방법</h3>
+            <ul>
+              <li>화살표 키 또는 우측 네비게이션으로 슬라이드 이동</li>
+              <li>브라우저 전체화면에서 발표</li>
+              <li>스크롤형이지만 PPT 느낌으로 구성</li>
+            </ul>
+            <div class="cta-row">
+              <a class="button primary" href="./presentation/index.html">발표자료 열기</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Implementation Boundary</p>
+            <h2 class="section-title">이번 작업의 구현 경계</h2>
+          </div>
+        </div>
+        <div class="card-grid">
+          <div class="info-card">
+            <strong>프론트 중심</strong>
+            <p>제출용 문서 HTML과 발표용 HTML을 우선 구현한다. 실제 백엔드 구현은 팀원 작업 범위로 남겨둔다.</p>
+          </div>
+          <div class="info-card">
+            <strong>백엔드 고정점만 유지</strong>
+            <p>루트 패키지명, 도메인명, 최소 엔티티 기준, 문의 구조, 상태값 기준만 문서로 명확히 고정한다.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="shell footer">
+      TripZone 설계 기준 전용 산출물 패키지
+    </footer>
+  </body>
+</html>

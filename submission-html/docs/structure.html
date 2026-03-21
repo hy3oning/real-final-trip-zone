@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TripZone 구조 명세서</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/site.css" />
+  </head>
+  <body>
+    <header class="floating-header">
+      <div class="floating-header-inner">
+        <div class="brand"><span class="brand-mark"></span><span>TripZone 구조 명세서</span></div>
+        <nav class="nav">
+          <a href="../index.html">홈</a>
+          <a href="./requirements.html">요구사항</a>
+          <a href="./features.html">기능</a>
+          <a class="active" href="./structure.html">구조</a>
+          <a href="./database.html">DB</a>
+        </nav>
+      </div>
+    </header>
+    <main class="shell doc-layout">
+      <aside class="doc-sidebar">
+        <div class="sidebar-card">
+          <h2>구조 기준</h2>
+          <p>이번 제출물은 demo 구조가 아니라 설계 기준 구조를 우선한다. 특히 루트 패키지명은 고정한다.</p>
+          <div class="pill-row">
+            <span class="pill">root package: com.kh.trip</span>
+          </div>
+          <nav class="sidebar-nav">
+            <a class="active" href="#package">패키지 구조</a>
+            <a href="#domains">도메인 구성</a>
+            <a href="#rules">구조 규칙</a>
+            <a href="#backend">최소 백엔드 고정점</a>
+          </nav>
+        </div>
+      </aside>
+      <div class="doc-main">
+        <section class="content-block" id="package">
+          <p class="eyebrow">Package</p>
+          <h2>패키지 구조</h2>
+          <div class="pill-row">
+            <span class="pill">com.kh.trip.domain</span>
+            <span class="pill">com.kh.trip.dto</span>
+            <span class="pill">com.kh.trip.repository</span>
+            <span class="pill">com.kh.trip.service</span>
+            <span class="pill">com.kh.trip.controller</span>
+            <span class="pill">com.kh.trip.config</span>
+          </div>
+          <p>trip-demo의 현재 구현 패키지명과 달라도, 제출 기준과 설계 기준에서는 위 패키지 구조를 고정한다.</p>
+        </section>
+
+        <section class="content-block" id="domains">
+          <p class="eyebrow">Domains</p>
+          <h2>도메인별 구성</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>도메인</th><th>핵심 클래스</th><th>핵심 서비스</th><th>핵심 컨트롤러</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>user</td><td>User, MemberGrade, HostProfile, UserAuthProvider, UserRole, UserRefreshToken</td><td>UserService, HostService, MileageService</td><td>UserController, HostController, MileageController</td></tr>
+                <tr><td>login</td><td>UserAuthProvider, UserRefreshToken</td><td>LoginService</td><td>LoginController</td></tr>
+                <tr><td>event</td><td>Event, Coupon, EventCoupon</td><td>EventService, CouponService</td><td>EventController, CouponController</td></tr>
+                <tr><td>reserve</td><td>Booking, Payment, Review, ReviewImage</td><td>BookingService, PaymentService, ReviewService</td><td>BookingController, PaymentController, ReviewController</td></tr>
+                <tr><td>lodging</td><td>Lodging, Room, Wishlist, LodgingImage</td><td>LodgingService, RoomService, WishlistService</td><td>LodgingController, RoomController, WishlistController</td></tr>
+                <tr><td>inquiry</td><td>InquiryRoom, InquiryMessage</td><td>InquiryService</td><td>InquiryController</td></tr>
+                <tr><td>admin</td><td>AuditLog</td><td>AdminService</td><td>AdminController</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-block" id="rules">
+          <p class="eyebrow">Rules</p>
+          <h2>구조 규칙</h2>
+          <ul>
+            <li>엔티티는 단수형 사용</li>
+            <li>DTO는 <span class="code-chip">DTO</span> 접미사 사용</li>
+            <li>서비스 구현체는 <span class="code-chip">Impl</span> 접미사 사용</li>
+            <li>문의 도메인은 <span class="code-chip">InquiryRoom / InquiryMessage</span> 기준으로 통일</li>
+            <li>오타와 중복 명칭은 개정 구조 기준으로 통일</li>
+          </ul>
+        </section>
+
+        <section class="content-block" id="backend">
+          <p class="eyebrow">Minimum Backend</p>
+          <h2>최소 백엔드 고정점</h2>
+          <div class="card-grid">
+            <div class="list-card">
+              <h3>반드시 고정할 것</h3>
+              <ul>
+                <li>루트 패키지명 <span class="code-chip">com.kh.trip</span></li>
+                <li>도메인명과 컨트롤러명</li>
+                <li>문의 모델 <span class="code-chip">InquiryRoom / InquiryMessage</span></li>
+                <li>예약 / 결제 / 리뷰 핵심 엔티티명</li>
+              </ul>
+            </div>
+            <div class="list-card">
+              <h3>팀원 백엔드 범위</h3>
+              <ul>
+                <li>실제 엔티티와 repository 구현</li>
+                <li>상태 전이와 정합성 검증</li>
+                <li>예약 중복 방지 로직</li>
+                <li>쿠폰/문의/감사로그 처리</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

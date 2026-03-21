@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TripZone DB 명세서</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/site.css" />
+  </head>
+  <body>
+    <header class="floating-header">
+      <div class="floating-header-inner">
+        <div class="brand"><span class="brand-mark"></span><span>TripZone DB 명세서</span></div>
+        <nav class="nav">
+          <a href="../index.html">홈</a>
+          <a href="./requirements.html">요구사항</a>
+          <a href="./features.html">기능</a>
+          <a href="./structure.html">구조</a>
+          <a class="active" href="./database.html">DB</a>
+        </nav>
+      </div>
+    </header>
+    <main class="shell doc-layout">
+      <aside class="doc-sidebar">
+        <div class="sidebar-card">
+          <h2>DB 기준</h2>
+          <p>실행용 DDL은 <span class="code-chip">tripzone-ddl-v2.sql</span>을 따르고, 이 문서는 제출용 요약본이다.</p>
+          <nav class="sidebar-nav">
+            <a class="active" href="#principles">설계 원칙</a>
+            <a href="#tables">주요 테이블</a>
+            <a href="#relations">핵심 관계</a>
+            <a href="#statuses">상태값 기준</a>
+            <a href="#integrity">정합성 기준</a>
+          </nav>
+        </div>
+      </aside>
+      <div class="doc-main">
+        <section class="content-block" id="principles">
+          <p class="eyebrow">Principles</p>
+          <h2>DB 설계 원칙</h2>
+          <ul>
+            <li>기본키는 <span class="code-chip">NUMBER(10)</span> + 시퀀스 사용</li>
+            <li>기본 등록/수정일 컬럼은 <span class="code-chip">REG_DATE</span>, <span class="code-chip">UPD_DATE</span></li>
+            <li>상태 기반 운영을 우선하고, 필요 시 soft-delete 컬럼 사용</li>
+          </ul>
+        </section>
+
+        <section class="content-block" id="tables">
+          <p class="eyebrow">Tables</p>
+          <h2>주요 테이블</h2>
+          <div class="card-grid">
+            <div class="list-card">
+              <h3>회원 영역</h3>
+              <ul>
+                <li>MEMBER_GRADES</li>
+                <li>USERS</li>
+                <li>USER_AUTH_PROVIDERS</li>
+                <li>USER_ROLES</li>
+                <li>USER_REFRESH_TOKENS</li>
+                <li>HOST_PROFILES</li>
+              </ul>
+            </div>
+            <div class="list-card">
+              <h3>상품 / 예약 영역</h3>
+              <ul>
+                <li>LODGINGS</li>
+                <li>ROOMS</li>
+                <li>BOOKINGS</li>
+                <li>PAYMENTS</li>
+                <li>LODGING_IMAGES</li>
+              </ul>
+            </div>
+            <div class="list-card">
+              <h3>리뷰 / 찜 영역</h3>
+              <ul>
+                <li>REVIEWS</li>
+                <li>REVIEW_IMAGES</li>
+                <li>WISHLISTS</li>
+              </ul>
+            </div>
+            <div class="list-card">
+              <h3>운영 / 혜택 / 문의 영역</h3>
+              <ul>
+                <li>EVENTS, COUPONS, USER_COUPONS, EVENT_COUPONS</li>
+                <li>MILEAGE_HISTORY, AUDIT_LOGS</li>
+                <li>INQUIRY_ROOMS, INQUIRY_MESSAGES</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-block" id="relations">
+          <p class="eyebrow">Relations</p>
+          <h2>핵심 관계</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>기준 테이블</th><th>참조 관계</th></tr></thead>
+              <tbody>
+                <tr><td>USERS</td><td>MEMBER_GRADES</td></tr>
+                <tr><td>HOST_PROFILES</td><td>USERS</td></tr>
+                <tr><td>LODGINGS</td><td>HOST_PROFILES</td></tr>
+                <tr><td>ROOMS</td><td>LODGINGS</td></tr>
+                <tr><td>BOOKINGS</td><td>USERS, ROOMS, USER_COUPONS</td></tr>
+                <tr><td>PAYMENTS</td><td>BOOKINGS</td></tr>
+                <tr><td>REVIEWS</td><td>BOOKINGS, USERS, LODGINGS</td></tr>
+                <tr><td>INQUIRY_ROOMS</td><td>USERS, HOST_PROFILES, LODGINGS, BOOKINGS</td></tr>
+                <tr><td>INQUIRY_MESSAGES</td><td>INQUIRY_ROOMS, USERS</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-block" id="statuses">
+          <p class="eyebrow">Statuses</p>
+          <h2>상태값 기준</h2>
+          <div class="card-grid">
+            <div class="list-card"><h3>회원 상태</h3><ul><li>ACTIVE</li><li>DORMANT</li><li>BLOCKED</li><li>DELETED</li></ul></div>
+            <div class="list-card"><h3>판매자 상태</h3><ul><li>PENDING</li><li>APPROVED</li><li>REJECTED</li><li>SUSPENDED</li></ul></div>
+            <div class="list-card"><h3>예약 상태</h3><ul><li>PENDING</li><li>CONFIRMED</li><li>CANCELED</li><li>COMPLETED</li><li>NO_SHOW</li></ul></div>
+            <div class="list-card"><h3>결제 / 문의 상태</h3><ul><li>READY / PAID / FAILED / CANCELED / PARTIAL_CANCELED / REFUNDED</li><li>OPEN / ANSWERED / CLOSED / BLOCKED</li></ul></div>
+          </div>
+        </section>
+
+        <section class="content-block" id="integrity">
+          <p class="eyebrow">Integrity</p>
+          <h2>정합성 기준</h2>
+          <ul>
+            <li>이메일 유니크</li>
+            <li>동일 회원/숙소 찜 중복 금지</li>
+            <li>동일 예약 리뷰 중복 금지</li>
+            <li>체크아웃 날짜는 체크인 날짜보다 뒤여야 함</li>
+            <li>환불 금액은 결제 금액 초과 불가</li>
+          </ul>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

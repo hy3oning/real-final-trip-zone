@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TripZone Final Presentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/site.css" />
+    <link rel="stylesheet" href="../assets/presentation.css" />
+  </head>
+  <body class="presentation-body">
+    <div class="presentation-shell">
+      <header class="presentation-header">
+        <div class="brand"><span class="brand-mark"></span><span>TripZone Final Presentation</span></div>
+        <div class="meta">
+          <span class="meta-index" id="metaIndex">01</span>
+          <span class="meta-title" id="metaTitle">개요</span>
+        </div>
+        <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+      </header>
+
+      <nav class="slide-rail" aria-label="발표 네비게이션">
+        <button class="rail-dot active" data-target="intro" aria-label="intro"></button>
+        <button class="rail-dot" data-target="problem" aria-label="problem"></button>
+        <button class="rail-dot" data-target="scope" aria-label="scope"></button>
+        <button class="rail-dot" data-target="roles" aria-label="roles"></button>
+        <button class="rail-dot" data-target="structure" aria-label="structure"></button>
+        <button class="rail-dot" data-target="database" aria-label="database"></button>
+        <button class="rail-dot" data-target="inquiry" aria-label="inquiry"></button>
+        <button class="rail-dot" data-target="frontend" aria-label="frontend"></button>
+        <button class="rail-dot" data-target="submission" aria-label="submission"></button>
+        <button class="rail-dot" data-target="closing" aria-label="closing"></button>
+      </nav>
+
+      <main class="deck">
+        <section class="slide active" id="intro" data-title="개요">
+          <div class="slide-frame hero-grid">
+            <div class="reveal">
+              <p class="eyebrow">Project Thesis</p>
+              <h1 class="slide-title">TripZone는 demo 기준이 아니라 설계 기준으로 다시 정리한 팀 프로젝트입니다</h1>
+              <p class="slide-subtitle">
+                기존 데모에서 좋은 시각 요소는 가져오되, 실제 제출물과 발표자료는 설계서 기준으로 다시 구성했다.
+                특히 패키지명, 도메인 구조, 문의 모델, 상태값 기준을 고정했다.
+              </p>
+              <div class="role-pill-row" style="margin-top: 18px;">
+                <span class="role-pill">com.kh.trip</span>
+                <span class="role-pill">3-role platform</span>
+                <span class="role-pill">InquiryRoom / InquiryMessage</span>
+              </div>
+            </div>
+            <div class="hero-panel-large reveal">
+              <div>
+                <p class="eyebrow" style="color: rgba(255,255,255,0.8);">Design-fixed package</p>
+                <h3>설계 기준 고정</h3>
+              </div>
+              <div class="big-number">4 + 1</div>
+              <div class="mini-chip-row">
+                <span class="mini-chip">명세서 HTML 4종</span>
+                <span class="mini-chip">발표용 deck 1종</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" id="problem" data-title="문제 정의">
+          <div class="slide-frame split-grid">
+            <div class="panel reveal">
+              <p class="eyebrow">Problem</p>
+              <h2 class="section-title">기존 demo와 설계 기준이 어긋나 있었다</h2>
+              <ul>
+                <li>현재 구현은 demo 기준으로 발전해 설계 문서와 일부 차이가 있었다.</li>
+                <li>구조명세와 DB 설계가 서로 다른 시점의 흔적을 동시에 갖고 있었다.</li>
+                <li>문의 모델, 패키지명, 상태값 기준이 그대로면 발표와 제출에서 혼선이 생긴다.</li>
+              </ul>
+            </div>
+            <div class="panel reveal">
+              <p class="eyebrow">Approach</p>
+              <h2 class="section-title">그래서 구현물과 설계물을 분리했다</h2>
+              <ul>
+                <li>trip-demo는 참고 자산으로만 사용</li>
+                <li>설계 기준 전용 제출물은 새 HTML 세트로 구성</li>
+                <li>프론트만 우선 구현하고, 백엔드는 최소 고정점만 명시</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" id="scope" data-title="프로젝트 범위">
+          <div class="slide-frame">
+            <div class="reveal">
+              <p class="eyebrow">Scope</p>
+              <h2 class="section-title">TripZone의 제품 범위</h2>
+              <p class="slide-subtitle">숙소 예약 플랫폼을 사용자, 판매자, 관리자 세 역할로 분리해 설계했다.</p>
+            </div>
+            <div class="feature-grid reveal" style="margin-top: 20px;">
+              <article class="feature-card">
+                <h3>User</h3>
+                <p>회원가입, 로그인, 숙소 탐색, 예약, 결제, 리뷰, 찜, 문의, 혜택 사용</p>
+              </article>
+              <article class="feature-card">
+                <h3>Seller</h3>
+                <p>판매자 승인 신청, 숙소/객실 등록, 예약 처리, 문의 응답</p>
+              </article>
+              <article class="feature-card">
+                <h3>Admin</h3>
+                <p>회원/판매자 관리, 이벤트/쿠폰 관리, 문의 모니터링, 감사 로그 관리</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" id="roles" data-title="3-Role 구조">
+          <div class="slide-frame">
+            <div class="reveal">
+              <p class="eyebrow">Roles</p>
+              <h2 class="section-title">핵심 구조는 3-role 분리다</h2>
+            </div>
+            <div class="role-grid reveal" style="margin-top: 20px;">
+              <article class="role-card user"><h3>일반 회원</h3><p>경험 중심 사용자</p><ul><li>검색</li><li>예약</li><li>결제</li><li>리뷰</li><li>문의</li></ul></article>
+              <article class="role-card seller"><h3>판매자</h3><p>운영 중심 사용자</p><ul><li>숙소 등록</li><li>객실 관리</li><li>예약 처리</li><li>문의 응답</li></ul></article>
+              <article class="role-card admin"><h3>관리자</h3><p>통제 중심 사용자</p><ul><li>판매자 승인</li><li>이벤트/쿠폰</li><li>문의 모니터링</li><li>감사 로그</li></ul></article>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" id="structure" data-title="구조 기준">
+          <div class="slide-frame two-col-grid">
+            <div class="panel reveal">
+              <p class="eyebrow">Structure</p>
+              <h2 class="section-title">루트 패키지명은 고정한다</h2>
+              <div class="pill-row">
+                <span class="pill">com.kh.trip.domain</span>
+                <span class="pill">com.kh.trip.dto</span>
+                <span class="pill">com.kh.trip.repository</span>
+                <span class="pill">com.kh.trip.service</span>
+                <span class="pill">com.kh.trip.controller</span>
+              </div>
+              <p style="margin-top: 16px;">이번 발표와 제출물은 현재 demo 구현 패키지가 아니라 구조명세서 기준 패키지로 설명한다.</p>
+            </div>
+            <div class="architecture-grid reveal">
+              <article class="arch-card">
+                <h3>주요 도메인</h3>
+                <ul>
+                  <li>User / HostProfile / MemberGrade</li>
+                  <li>Lodging / Room / Wishlist</li>
+                  <li>Booking / Payment / Review</li>
+                </ul>
+              </article>
+              <article class="arch-card">
+                <h3>문의 도메인</h3>
+                <ul>
+                  <li>InquiryRoom</li>
+                  <li>InquiryMessage</li>
+                  <li>InquiryService / InquiryController</li>
+                </ul>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" id="database" data-title="DB 기준">
+          <div class="slide-frame">
+            <div class="reveal">
+              <p class="eyebrow">Database</p>
+              <h2 class="section-title">DB는 상태 기반 운영 모델로 보강했다</h2>
+            </div>
+            <div class="status-grid reveal" style="margin-top: 20px;">
+              <article class="status-card"><h3>회원</h3><p>ACTIVE, DORMANT, BLOCKED, DELETED</p></article>
+              <article class="status-card"><h3>판매자</h3><p>PENDING, APPROVED, REJECTED, SUSPENDED</p></article>
+              <article class="status-card"><h3>예약</h3><p>PENDING, CONFIRMED, CANCELED, COMPLETED, NO_SHOW</p></article>
+            </div>
+            <div class="stack-grid reveal" style="margin-top: 16px;">
+              <article class="timeline-card"><h3>핵심 테이블</h3><ul><li>USERS, HOST_PROFILES</li><li>LODGINGS, ROOMS</li><li>BOOKINGS, PAYMENTS</li><li>REVIEWS, WISHLISTS</li></ul></article>
+              <article class="timeline-card"><h3>운영 / 혜택 / 문의</h3><ul><li>EVENTS, COUPONS, USER_COUPONS</li><li>MILEAGE_HISTORY, AUDIT_LOGS</li><li>INQUIRY_ROOMS, INQUIRY_MESSAGES</li></ul></article>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" id="inquiry" data-title="문의 모델">
+          <div class="slide-frame split-grid">
+            <div class="panel reveal">
+              <p class="eyebrow">Conflict Fix</p>
+              <h2 class="section-title">가장 큰 충돌은 문의 구조였다</h2>
+              <p class="slide-subtitle">초안에는 Inquiry / Comment가 있었고, 대화에서는 채팅형 문의로 방향이 바뀌었다.</p>
+            </div>
+            <div class="flow-list reveal">
+              <div class="flow-step"><strong>기존 흔적</strong><span>Inquiries / Comment / InquiryRoomRepository 혼재</span></div>
+              <div class="flow-step"><strong>최종 기준</strong><span>InquiryRoom = 문의방, InquiryMessage = 메시지</span></div>
+              <div class="flow-step"><strong>효과</strong><span>읽음 처리, 운영자 개입, 상태 관리, 실시간 대화 확장에 유리</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" id="frontend" data-title="프론트 우선 구현">
+          <div class="slide-frame two-col-grid">
+            <div class="panel reveal">
+              <p class="eyebrow">Frontend First</p>
+              <h2 class="section-title">이번 구현은 프론트 산출물 중심이다</h2>
+              <ul>
+                <li>제출용 명세서 HTML 4종</li>
+                <li>발표용 PPT HTML 1종</li>
+                <li>인쇄/PDF 변환 대응 레이아웃</li>
+              </ul>
+            </div>
+            <div class="panel reveal">
+              <p class="eyebrow">Backend Minimum</p>
+              <h2 class="section-title">백엔드는 최소 고정점만 명시한다</h2>
+              <ul>
+                <li>루트 패키지명 고정</li>
+                <li>도메인명과 상태값 기준 고정</li>
+                <li>문의 구조와 핵심 엔티티 기준 고정</li>
+                <li>실제 구현은 팀원 백엔드 작업 범위</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" id="submission" data-title="제출물 구성">
+          <div class="slide-frame">
+            <div class="reveal">
+              <p class="eyebrow">Submission</p>
+              <h2 class="section-title">최종 제출물 구성</h2>
+            </div>
+            <div class="stack-grid reveal" style="margin-top: 20px;">
+              <article class="timeline-card"><h3>문서형</h3><ul><li>요구사항 명세서</li><li>기능 명세서</li><li>구조 명세서</li><li>DB 명세서</li></ul></article>
+              <article class="timeline-card"><h3>기준형</h3><ul><li>DDL</li><li>수정 사유 코멘트</li><li>발표용 HTML deck</li></ul></article>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" id="closing" data-title="마무리">
+          <div class="slide-frame split-grid">
+            <div class="panel reveal">
+              <p class="eyebrow">Closing</p>
+              <h2 class="section-title">이번 정리는 demo 개선이 아니라 설계 기준 고정 작업이다</h2>
+              <p class="slide-subtitle">
+                발표와 제출은 설계 기준으로, 실제 구현은 이후 팀 작업으로 이어질 수 있게 문서와 화면 기준을 먼저 정리했다.
+              </p>
+            </div>
+            <div class="panel reveal">
+              <p class="eyebrow">Key Result</p>
+              <ul>
+                <li>패키지 기준 고정</li>
+                <li>문의 구조 충돌 해소</li>
+                <li>DB 상태 모델 정리</li>
+                <li>프론트 제출물과 발표물 완성</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="../assets/presentation.js"></script>
+  </body>
+</html>
