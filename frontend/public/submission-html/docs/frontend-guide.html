@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TripZone 프론트 연동 가이드</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/site.css" />
+    <script src="../assets/site.js" defer></script>
+  </head>
+  <body>
+    <header class="floating-header">
+      <div class="floating-header-inner">
+        <div class="brand"><span class="brand-mark"></span><span>TripZone 프론트 연동 가이드</span></div>
+        <nav class="nav">
+          <a href="../index.html">대시보드</a>
+          <a href="./requirements.html">요구사항</a>
+          <a href="./features.html">기능</a>
+          <a href="./structure.html">구조</a>
+          <a href="./database.html">DB</a>
+          <a href="./company.html">통합 기준</a>
+          <a href="../presentation/index.html">발표자료</a>
+        </nav>
+      </div>
+    </header>
+    <main class="shell doc-layout">
+      <aside class="doc-sidebar">
+        <div class="sidebar-card">
+          <h2>연동 가이드</h2>
+          <p>프론트 화면이 실제 API에서 기대하는 응답 형태를 정리한 문서다.</p>
+          <nav class="sidebar-nav">
+            <a class="active" href="#purpose">문서 목적</a>
+            <a href="#contract">공통 계약</a>
+            <a href="#bookings">내 예약</a>
+            <a href="#coupons">쿠폰</a>
+            <a href="#mileage">마일리지</a>
+            <a href="#payments">결제 내역</a>
+            <a href="#inquiries">문의센터</a>
+            <a href="#priority">연결 순서</a>
+            <a href="#sample">예시 응답</a>
+          </nav>
+          <div class="doc-links-card">
+            <h3>함께 참고</h3>
+            <div class="doc-links-list">
+              <a href="./features.html">기능 명세서</a>
+              <a href="./company.html">통합 기준서</a>
+              <a href="./ddl.html">DDL 기준</a>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <div class="doc-main">
+        <section class="content-block" id="purpose">
+          <p class="eyebrow">Purpose</p>
+          <h2>문서 목적</h2>
+          <div class="doc-meta-strip">
+            <span>API 응답 기준</span>
+            <span>마이페이지 우선</span>
+            <span>요약값 포함</span>
+            <span>fallback 고려</span>
+          </div>
+          <p>
+            Oracle 연결이 먼저 성공해도 응답 필드가 최소 수준이면 화면은 단출하게 보일 수 있다.
+            이 문서는 프론트가 실제로 그리는 데 필요한 응답 구조를 정리한 연동 기준이다.
+          </p>
+          <div class="notice">
+            엔티티를 그대로 노출하기보다 화면 단위 응답을 내려주는 쪽이 안전하다.
+          </div>
+        </section>
+
+        <section class="content-block" id="contract">
+          <p class="eyebrow">Contract</p>
+          <h2>공통 응답 계약</h2>
+          <div class="card-grid">
+            <div class="list-card">
+              <h3>공통 필드</h3>
+              <ul>
+                <li><span class="code-chip">id</span></li>
+                <li><span class="code-chip">status</span></li>
+                <li><span class="code-chip">statusLabel</span></li>
+                <li><span class="code-chip">createdAt / updatedAt</span></li>
+                <li><span class="code-chip">actions</span></li>
+              </ul>
+            </div>
+            <div class="list-card">
+              <h3>상단 요약</h3>
+              <ul>
+                <li><span class="code-chip">summary.totalCount</span></li>
+                <li><span class="code-chip">summary.balance</span></li>
+                <li><span class="code-chip">summary.amountTotal</span></li>
+                <li><span class="code-chip">summary.activeCount</span></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-block" id="bookings">
+          <p class="eyebrow">Bookings</p>
+          <h2>내 예약</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>구분</th><th>필드</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>요약</td><td>totalCount, upcomingCount, completedCount, canceledCount</td></tr>
+                <tr><td>기본</td><td>bookingId, bookingStatus, bookingStatusLabel, checkInDate, checkOutDate, guestCount</td></tr>
+                <tr><td>숙소</td><td>lodgingId, lodgingName, roomId, roomName, region, thumbnailUrl</td></tr>
+                <tr><td>액션</td><td>canCancel, canReview, canViewPayment</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-block" id="coupons">
+          <p class="eyebrow">Coupons</p>
+          <h2>쿠폰</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>구분</th><th>필드</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>요약</td><td>availableCount, expiringSoonCount, usedCount</td></tr>
+                <tr><td>기본</td><td>userCouponId, couponName, couponType, discountValue, discountLabel</td></tr>
+                <tr><td>상태</td><td>status, statusLabel, issuedAt, expiredAt, isUsable</td></tr>
+                <tr><td>대상</td><td>appliesTo</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-block" id="mileage">
+          <p class="eyebrow">Mileage</p>
+          <h2>마일리지</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>구분</th><th>필드</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>요약</td><td>balance, earnedThisMonth, usedThisMonth</td></tr>
+                <tr><td>기록</td><td>historyId, historyType, historyTypeLabel, title, description, amount, occurredAt</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-block" id="payments">
+          <p class="eyebrow">Payments</p>
+          <h2>결제 내역</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>구분</th><th>필드</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>요약</td><td>paymentCount, paidAmountTotal, refundAmountTotal</td></tr>
+                <tr><td>기본</td><td>paymentId, bookingId, paymentStatus, paymentStatusLabel</td></tr>
+                <tr><td>숙소</td><td>lodgingName, roomName</td></tr>
+                <tr><td>금액</td><td>paymentAmount, refundAmount</td></tr>
+                <tr><td>수단</td><td>paymentMethod, paymentMethodLabel, paidAt</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-block" id="inquiries">
+          <p class="eyebrow">Inquiries</p>
+          <h2>문의센터</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>구분</th><th>필드</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>요약</td><td>openCount, answeredCount, closedCount</td></tr>
+                <tr><td>기본</td><td>inquiryRoomId, title, inquiryType, inquiryTypeLabel</td></tr>
+                <tr><td>상태</td><td>roomStatus, roomStatusLabel</td></tr>
+                <tr><td>참조</td><td>lodgingId, lodgingName, bookingId</td></tr>
+                <tr><td>최근 메시지</td><td>latestMessagePreview, latestMessageAt</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-block" id="priority">
+          <p class="eyebrow">Priority</p>
+          <h2>연결 우선순위</h2>
+          <div class="timeline">
+            <div class="timeline-item"><div class="timeline-step">01</div><div><strong>내 예약</strong><p>summary, 상태, 숙소 정보, 버튼용 id가 가장 먼저 필요하다.</p></div></div>
+            <div class="timeline-item"><div class="timeline-step">02</div><div><strong>쿠폰 / 마일리지</strong><p>count, balance, 상태 라벨이 화면 밀도에 큰 영향을 준다.</p></div></div>
+            <div class="timeline-item"><div class="timeline-step">03</div><div><strong>결제 내역</strong><p>결제수단, 금액, 환불 상태까지 같이 내려와야 한다.</p></div></div>
+            <div class="timeline-item"><div class="timeline-step">04</div><div><strong>문의센터</strong><p>문의방 정보와 최근 메시지 preview가 같이 필요하다.</p></div></div>
+          </div>
+        </section>
+
+        <section class="content-block" id="sample">
+          <p class="eyebrow">Sample</p>
+          <h2>예시 응답</h2>
+          <pre class="code-block">{
+  "summary": {
+    "totalCount": 3,
+    "upcomingCount": 1,
+    "completedCount": 1,
+    "canceledCount": 1
+  },
+  "items": [
+    {
+      "bookingId": 301,
+      "bookingStatus": "CONFIRMED",
+      "bookingStatusLabel": "예약 확정",
+      "lodgingId": 12,
+      "lodgingName": "해운대 오션 스테이",
+      "roomId": 101,
+      "roomName": "101호",
+      "region": "부산 · 해운대",
+      "checkInDate": "2026-03-29",
+      "checkOutDate": "2026-04-02",
+      "guestCount": 2,
+      "totalPrice": 390000,
+      "thumbnailUrl": "/images/lodging-12.jpg",
+      "canCancel": true,
+      "canReview": false,
+      "canViewPayment": true
+    }
+  ]
+}</pre>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>
