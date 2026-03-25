@@ -16,7 +16,7 @@
   <body class="presentation-body">
     <div class="presentation-shell">
       <header class="presentation-header">
-        <div class="brand"><span class="brand-mark"></span><span>TripZone Final Presentation</span></div>
+        <div class="brand"><span class="brand-mark"></span><span>TripZone Presentation</span></div>
         <div class="meta">
           <span class="meta-index" id="metaIndex">01</span>
           <span class="meta-title" id="metaTitle">개요</span>
@@ -41,11 +41,10 @@
         <section class="slide active" id="intro" data-title="개요">
           <div class="slide-frame hero-grid">
             <div class="reveal">
-              <p class="eyebrow">Project Thesis</p>
-              <h1 class="slide-title">TripZone는 demo 기준이 아니라 설계 기준으로 다시 정리한 팀 프로젝트입니다</h1>
+              <p class="eyebrow">Project Overview</p>
+              <h1 class="slide-title">TripZone는 설계 문서와 구현 기준을 함께 정리한 팀 프로젝트입니다</h1>
               <p class="slide-subtitle">
-                기존 데모에서 좋은 시각 요소는 가져오되, 실제 제출물과 발표자료는 설계서 기준으로 다시 구성했다.
-                특히 패키지명, 도메인 구조, 문의 모델, 상태값 기준을 고정했다.
+                요구사항, 구조, DB, 문의 모델을 한 흐름으로 정리했다.
               </p>
               <div class="role-pill-row" style="margin-top: 18px;">
                 <span class="role-pill">com.kh.trip</span>
@@ -55,8 +54,8 @@
             </div>
             <div class="hero-panel-large reveal">
               <div>
-                <p class="eyebrow" style="color: rgba(255,255,255,0.8);">Design-fixed package</p>
-                <h3>설계 기준 고정</h3>
+                <p class="eyebrow" style="color: rgba(255,255,255,0.8);">Project Set</p>
+                <h3>설계 문서 세트</h3>
               </div>
               <div class="big-number">4 + 1</div>
               <div class="mini-chip-row">
@@ -70,21 +69,21 @@
         <section class="slide" id="problem" data-title="문제 정의">
           <div class="slide-frame split-grid">
             <div class="panel reveal">
-              <p class="eyebrow">Problem</p>
-              <h2 class="section-title">기존 demo와 설계 기준이 어긋나 있었다</h2>
+              <p class="eyebrow">Background</p>
+              <h2 class="section-title">문서와 구현 기준을 같은 흐름으로 맞출 필요가 있었다</h2>
               <ul>
-                <li>현재 구현은 demo 기준으로 발전해 설계 문서와 일부 차이가 있었다.</li>
-                <li>구조명세와 DB 설계가 서로 다른 시점의 흔적을 동시에 갖고 있었다.</li>
-                <li>문의 모델, 패키지명, 상태값 기준이 그대로면 발표와 제출에서 혼선이 생긴다.</li>
+                <li>문서 기준 정리</li>
+                <li>상태값 표현 통일</li>
+                <li>팀 공유용 자료 구성</li>
               </ul>
             </div>
             <div class="panel reveal">
               <p class="eyebrow">Approach</p>
-              <h2 class="section-title">그래서 구현물과 설계물을 분리했다</h2>
+              <h2 class="section-title">핵심 설계 문서와 구현 기준을 분명하게 나눠 정리했다</h2>
               <ul>
-                <li>trip-demo는 참고 자산으로만 사용</li>
-                <li>설계 기준 전용 제출물은 새 HTML 세트로 구성</li>
-                <li>프론트만 우선 구현하고, 백엔드는 최소 고정점만 명시</li>
+                <li>HTML 허브 재구성</li>
+                <li>통합 기준서, DDL, 메모 연결</li>
+                <li>프론트와 백엔드 기준 분리</li>
               </ul>
             </div>
           </div>
@@ -95,7 +94,7 @@
             <div class="reveal">
               <p class="eyebrow">Scope</p>
               <h2 class="section-title">TripZone의 제품 범위</h2>
-              <p class="slide-subtitle">숙소 예약 플랫폼을 사용자, 판매자, 관리자 세 역할로 분리해 설계했다.</p>
+              <p class="slide-subtitle">사용자, 판매자, 관리자 3개 역할 기준으로 설계했다.</p>
             </div>
             <div class="feature-grid reveal" style="margin-top: 20px;">
               <article class="feature-card">
@@ -118,7 +117,7 @@
           <div class="slide-frame">
             <div class="reveal">
               <p class="eyebrow">Roles</p>
-              <h2 class="section-title">핵심 구조는 3-role 분리다</h2>
+              <h2 class="section-title">핵심 구조는 3개 역할 분리다</h2>
             </div>
             <div class="role-grid reveal" style="margin-top: 20px;">
               <article class="role-card user"><h3>일반 회원</h3><p>경험 중심 사용자</p><ul><li>검색</li><li>예약</li><li>결제</li><li>리뷰</li><li>문의</li></ul></article>
@@ -132,7 +131,7 @@
           <div class="slide-frame two-col-grid">
             <div class="panel reveal">
               <p class="eyebrow">Structure</p>
-              <h2 class="section-title">루트 패키지명은 고정한다</h2>
+              <h2 class="section-title">루트 패키지명과 레이어 기준을 함께 본다</h2>
               <div class="pill-row">
                 <span class="pill">com.kh.trip.domain</span>
                 <span class="pill">com.kh.trip.dto</span>
@@ -140,7 +139,7 @@
                 <span class="pill">com.kh.trip.service</span>
                 <span class="pill">com.kh.trip.controller</span>
               </div>
-              <p style="margin-top: 16px;">이번 발표와 제출물은 현재 demo 구현 패키지가 아니라 구조명세서 기준 패키지로 설명한다.</p>
+              <p style="margin-top: 16px;">패키지와 레이어 기준을 중심으로 구조를 설명한다.</p>
             </div>
             <div class="architecture-grid reveal">
               <article class="arch-card">
@@ -185,13 +184,13 @@
           <div class="slide-frame split-grid">
             <div class="panel reveal">
               <p class="eyebrow">Conflict Fix</p>
-              <h2 class="section-title">가장 큰 충돌은 문의 구조였다</h2>
-              <p class="slide-subtitle">초안에는 Inquiry / Comment가 있었고, 대화에서는 채팅형 문의로 방향이 바뀌었다.</p>
+              <h2 class="section-title">문의 모델은 메시지 기반 구조로 정리했다</h2>
+              <p class="slide-subtitle">문의방과 메시지를 분리한 구조를 사용한다.</p>
             </div>
             <div class="flow-list reveal">
-              <div class="flow-step"><strong>기존 흔적</strong><span>Inquiries / Comment / InquiryRoomRepository 혼재</span></div>
-              <div class="flow-step"><strong>최종 기준</strong><span>InquiryRoom = 문의방, InquiryMessage = 메시지</span></div>
-              <div class="flow-step"><strong>효과</strong><span>읽음 처리, 운영자 개입, 상태 관리, 실시간 대화 확장에 유리</span></div>
+              <div class="flow-step"><strong>구조</strong><span>InquiryRoom = 문의방</span></div>
+              <div class="flow-step"><strong>메시지</strong><span>InquiryMessage = 대화 단위</span></div>
+              <div class="flow-step"><strong>확장</strong><span>읽음 처리 · 상태 관리</span></div>
             </div>
           </div>
         </section>
@@ -202,19 +201,19 @@
               <p class="eyebrow">Frontend First</p>
               <h2 class="section-title">이번 구현은 프론트 산출물 중심이다</h2>
               <ul>
-                <li>제출용 명세서 HTML 4종</li>
-                <li>발표용 PPT HTML 1종</li>
-                <li>인쇄/PDF 변환 대응 레이아웃</li>
+                <li>명세서 HTML 4종</li>
+                <li>발표용 HTML 1종</li>
+                <li>인쇄 / PDF 대응</li>
               </ul>
             </div>
             <div class="panel reveal">
               <p class="eyebrow">Backend Minimum</p>
-              <h2 class="section-title">백엔드는 최소 고정점만 명시한다</h2>
+              <h2 class="section-title">백엔드는 연결 기준만 정리한다</h2>
               <ul>
-                <li>루트 패키지명 고정</li>
-                <li>도메인명과 상태값 기준 고정</li>
-                <li>문의 구조와 핵심 엔티티 기준 고정</li>
-                <li>실제 구현은 팀원 백엔드 작업 범위</li>
+                <li>패키지와 레이어</li>
+                <li>도메인명과 상태값</li>
+                <li>문의 구조와 핵심 엔티티</li>
+                <li>실제 구현은 팀원 범위</li>
               </ul>
             </div>
           </div>
@@ -237,18 +236,18 @@
           <div class="slide-frame split-grid">
             <div class="panel reveal">
               <p class="eyebrow">Closing</p>
-              <h2 class="section-title">이번 정리는 demo 개선이 아니라 설계 기준 고정 작업이다</h2>
+              <h2 class="section-title">이번 정리는 설계 문서와 구현 기준을 팀 단위로 공유하기 위한 작업이다</h2>
               <p class="slide-subtitle">
-                발표와 제출은 설계 기준으로, 실제 구현은 이후 팀 작업으로 이어질 수 있게 문서와 화면 기준을 먼저 정리했다.
+                설계 문서와 구현 기준을 같은 흐름으로 참고할 수 있게 정리했다.
               </p>
             </div>
             <div class="panel reveal">
               <p class="eyebrow">Key Result</p>
               <ul>
-                <li>패키지 기준 고정</li>
-                <li>문의 구조 충돌 해소</li>
+                <li>문서 허브 정리</li>
+                <li>문의 모델 정리</li>
                 <li>DB 상태 모델 정리</li>
-                <li>프론트 제출물과 발표물 완성</li>
+                <li>공유용 자료 구성</li>
               </ul>
             </div>
           </div>

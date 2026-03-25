@@ -31,20 +31,20 @@
       <aside class="doc-sidebar">
         <div class="sidebar-card">
           <h2>수정 코멘트</h2>
-          <p>기존 팀 설계 초안에서 왜 어떤 항목을 고쳤는지, 무엇을 유지했는지 남긴 기록.</p>
+          <p>문서 정리 방향, 유지 기준, 구현 시 참고할 메모를 정리한 페이지다.</p>
         </div>
       </aside>
       <div class="doc-main">
         <section class="content-block">
           <p class="eyebrow">Why Changed</p>
-          <h2>주요 수정 이유</h2>
+          <h2>주요 정리 항목</h2>
           <div class="timeline">
-            <div class="timeline-item"><div class="timeline-step">01</div><div><strong>예시 프로젝트 흔적 제거</strong><p>TripZone 기준 문서로 재서술하고, 다른 프로젝트 흔적을 제거했다.</p></div></div>
-            <div class="timeline-item"><div class="timeline-step">02</div><div><strong>권한 구조 통일</strong><p><span class="code-chip">USER_ROLES</span>, <span class="code-chip">USER_AUTH_PROVIDERS</span>, <span class="code-chip">USER_REFRESH_TOKENS</span> 기준으로 통일했다.</p></div></div>
-            <div class="timeline-item"><div class="timeline-step">03</div><div><strong>문의 구조 교정</strong><p>게시글+댓글 구조 대신 <span class="code-chip">INQUIRY_ROOMS + INQUIRY_MESSAGES</span> 채팅형 구조로 확정했다.</p></div></div>
-            <div class="timeline-item"><div class="timeline-step">04</div><div><strong>판매자/회원 상태 확장</strong><p>승인 후 제재와 휴면/차단/탈퇴 같은 운영 상태를 표현할 수 있게 보강했다.</p></div></div>
-            <div class="timeline-item"><div class="timeline-step">05</div><div><strong>예약/결제/리뷰 정합성 보강</strong><p>취소 추적, 환불 제약, 리뷰 운영 상태, 중복 방지 기준을 강화했다.</p></div></div>
-            <div class="timeline-item"><div class="timeline-step">06</div><div><strong>감사 로그 추가</strong><p>승인, 차단, 강제 취소, 쿠폰 발급 같은 운영 행위를 추적할 수 있게 했다.</p></div></div>
+            <div class="timeline-item"><div class="timeline-step">01</div><div><strong>문서 기준 정리</strong><p>TripZone 문맥에 맞게 문서 표현과 구조를 다시 정리했다.</p></div></div>
+            <div class="timeline-item"><div class="timeline-step">02</div><div><strong>권한 구조 통일</strong><p><span class="code-chip">USER_ROLES</span>, <span class="code-chip">USER_AUTH_PROVIDERS</span>, <span class="code-chip">USER_REFRESH_TOKENS</span> 기준으로 표현을 맞췄다.</p></div></div>
+            <div class="timeline-item"><div class="timeline-step">03</div><div><strong>문의 모델 정리</strong><p><span class="code-chip">INQUIRY_ROOMS + INQUIRY_MESSAGES</span> 기준으로 문의 구조를 일관되게 맞췄다.</p></div></div>
+            <div class="timeline-item"><div class="timeline-step">04</div><div><strong>운영 상태 확장</strong><p>판매자와 회원 운영 상태를 서비스 흐름에 맞게 보완했다.</p></div></div>
+            <div class="timeline-item"><div class="timeline-step">05</div><div><strong>예약 / 결제 / 리뷰 기준 보완</strong><p>취소 추적, 환불 제약, 리뷰 상태, 중복 방지 기준을 함께 정리했다.</p></div></div>
+            <div class="timeline-item"><div class="timeline-step">06</div><div><strong>운영 로그 범위 추가</strong><p>승인, 차단, 취소, 쿠폰 발급 같은 운영 행위를 추적할 수 있게 범위를 넓혔다.</p></div></div>
           </div>
         </section>
 
@@ -68,6 +68,29 @@
             <li>회원 쿠폰 재사용 방지</li>
             <li>문의방 접근 권한 검증</li>
           </ul>
+        </section>
+
+        <section class="content-block">
+          <p class="eyebrow">Impact</p>
+          <h2>이 문서를 볼 때 확인할 것</h2>
+          <div class="card-grid">
+            <div class="list-card">
+              <h3>유지한 축</h3>
+              <ul>
+                <li>핵심 테이블명</li>
+                <li>시간 컬럼 규칙</li>
+                <li>기본키 명명 규칙</li>
+              </ul>
+            </div>
+            <div class="list-card">
+              <h3>조정한 축</h3>
+              <ul>
+                <li>문의 모델</li>
+                <li>권한 구조</li>
+                <li>운영 상태값</li>
+              </ul>
+            </div>
+          </div>
         </section>
       </div>
     </main>

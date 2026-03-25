@@ -46,7 +46,7 @@ npm run dev -- --host 127.0.0.1 --port 5173
 
 - 메인 앱: `http://127.0.0.1:5173/`
 - 설계 대시보드: `http://127.0.0.1:5173/submission-html/`
-- 발표자료: `http://127.0.0.1:5173/submission-html/presentation/`
+- 발표자료: `http://127.0.0.1:5173/submission-html/presentation/index.html`
 
 ### 빌드 확인
 
@@ -81,6 +81,11 @@ npm run build
 ### 발표자료
 
 - 발표자료 HTML deck: `/submission-html/presentation/`
+- 로컬 발표자료 주소: `http://127.0.0.1:5173/submission-html/presentation/index.html`
+- 발표자료 상대 경로: `/submission-html/presentation/index.html`
+- 발표자료 소스 HTML: `frontend/public/submission-html/presentation/index.html`
+- 발표자료 스타일: `frontend/public/submission-html/assets/presentation.css`
+- 발표자료 스크립트: `frontend/public/submission-html/assets/presentation.js`
 
 ## 현재 구현 범위
 

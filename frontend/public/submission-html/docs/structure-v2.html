@@ -32,11 +32,11 @@
       <aside class="doc-sidebar">
         <div class="sidebar-card">
           <h2>구조 기준 v2</h2>
-          <p>기존 구조명세 스프레드시트와 최신 도메인 설계를 맞춘 상세 구조 기준.</p>
+          <p>패키지, 도메인, 명칭 정리 기준을 상세하게 확인하는 구조 문서다.</p>
           <nav class="sidebar-nav">
             <a class="active" href="#base">공통 패키지</a>
             <a href="#domains">도메인별 구조</a>
-            <a href="#fixes">교정 항목</a>
+            <a href="#fixes">정리 항목</a>
             <a href="#rules">구조 규칙</a>
           </nav>
         </div>
@@ -53,7 +53,7 @@
             <span class="pill">com.kh.trip.controller</span>
             <span class="pill">com.kh.trip.config</span>
           </div>
-          <p>구조명세 스프레드시트의 패키지 분류 의도는 유지하되, 오타와 충돌 명칭을 최신 기준으로 교체한다.</p>
+          <p>기존 구조 분류 의도는 유지하고, 오타와 충돌 명칭만 최신 기준으로 정리한다.</p>
         </section>
 
         <section class="content-block" id="domains">
@@ -79,11 +79,11 @@
 
         <section class="content-block" id="fixes">
           <p class="eyebrow">Fixes</p>
-          <h2>구조명세서에서 바로잡은 항목</h2>
+          <h2>구조명세서 정리 항목</h2>
           <div class="timeline">
-            <div class="timeline-item"><div class="timeline-step">01</div><div><strong>오타 수정</strong><p><span class="code-chip">BookindController</span> → <span class="code-chip">BookingController</span>, <span class="code-chip">LodgindImage</span> → <span class="code-chip">LodgingImage</span></p></div></div>
+            <div class="timeline-item"><div class="timeline-step">01</div><div><strong>오타 정리</strong><p><span class="code-chip">BookindController</span> → <span class="code-chip">BookingController</span>, <span class="code-chip">LodgindImage</span> → <span class="code-chip">LodgingImage</span></p></div></div>
             <div class="timeline-item"><div class="timeline-step">02</div><div><strong>명칭 통일</strong><p><span class="code-chip">WishList</span> → <span class="code-chip">Wishlist</span>, <span class="code-chip">UserGradeRepository</span> → <span class="code-chip">MemberGradeRepository</span></p></div></div>
-            <div class="timeline-item"><div class="timeline-step">03</div><div><strong>문의 구조 교정</strong><p><span class="code-chip">Inquiry / Comment</span> → <span class="code-chip">InquiryRoom / InquiryMessage</span></p></div></div>
+            <div class="timeline-item"><div class="timeline-step">03</div><div><strong>문의 모델 정리</strong><p><span class="code-chip">Inquiry / Comment</span> → <span class="code-chip">InquiryRoom / InquiryMessage</span></p></div></div>
           </div>
         </section>
 
