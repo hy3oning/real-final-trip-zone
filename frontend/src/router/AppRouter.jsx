@@ -11,6 +11,7 @@ import EventsPage from "../pages/common/EventsPage";
 import LodgingListPage from "../pages/user/LodgingListPage";
 import LodgingDetailPage from "../pages/user/LodgingDetailPage";
 import BookingPage from "../pages/user/BookingPage";
+import MyPageHomePage from "../pages/user/MyPageHomePage";
 import MyProfilePage from "../pages/user/MyProfilePage";
 import MyBookingsPage from "../pages/user/MyBookingsPage";
 import MyBookingDetailPage from "../pages/user/MyBookingDetailPage";
@@ -19,11 +20,12 @@ import MyWishlistPage from "../pages/user/MyWishlistPage";
 import MyCouponsPage from "../pages/user/MyCouponsPage";
 import MyMileagePage from "../pages/user/MyMileagePage";
 import MyPaymentsPage from "../pages/user/MyPaymentsPage";
+import MyMembershipPage from "../pages/user/MyMembershipPage";
+import MySellerApplyPage from "../pages/user/MySellerApplyPage";
 import MyInquiryCreatePage from "../pages/user/MyInquiryCreatePage";
 import MyInquiryDetailPage from "../pages/user/MyInquiryDetailPage";
 import MyInquiryEditPage from "../pages/user/MyInquiryEditPage";
 import SellerDashboardPage from "../pages/seller/SellerDashboardPage";
-import SellerApplyPage from "../pages/seller/SellerApplyPage";
 import SellerLodgingsPage from "../pages/seller/SellerLodgingsPage";
 import SellerRoomsPage from "../pages/seller/SellerRoomsPage";
 import SellerAssetsPage from "../pages/seller/SellerAssetsPage";
@@ -55,7 +57,8 @@ export default function AppRouter() {
           <Route path="/lodgings" element={<LodgingListPage />} />
           <Route path="/lodgings/:lodgingId" element={<LodgingDetailPage />} />
           <Route path="/booking/:lodgingId" element={<BookingPage />} />
-          <Route path="/my" element={<Navigate to="/my/profile" replace />} />
+          <Route path="/my" element={<MyPageHomePage />} />
+          <Route path="/my/home" element={<MyPageHomePage />} />
           <Route path="/my/profile" element={<MyProfilePage />} />
           <Route path="/my/bookings" element={<MyBookingsPage />} />
           <Route path="/my/bookings/:bookingId" element={<MyBookingDetailPage />} />
@@ -67,8 +70,10 @@ export default function AppRouter() {
           <Route path="/my/coupons" element={<MyCouponsPage />} />
           <Route path="/my/mileage" element={<MyMileagePage />} />
           <Route path="/my/payments" element={<MyPaymentsPage />} />
+          <Route path="/my/membership" element={<MyMembershipPage />} />
+          <Route path="/my/seller-apply" element={<MySellerApplyPage />} />
           <Route path="/seller" element={<SellerDashboardPage />} />
-          <Route path="/seller/apply" element={<SellerApplyPage />} />
+          <Route path="/seller/apply" element={<Navigate to="/my/seller-apply" replace />} />
           <Route path="/seller/lodgings" element={<SellerLodgingsPage />} />
           <Route path="/seller/rooms" element={<SellerRoomsPage />} />
           <Route path="/seller/assets" element={<SellerAssetsPage />} />

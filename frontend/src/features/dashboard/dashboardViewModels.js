@@ -187,7 +187,7 @@ export function getSellerDashboardViewModel({ reservations, lodgings, metrics, s
       { title: "문의 관리", subtitle: "답변 대기 확인", to: "/seller/inquiries" },
       { title: "객실 관리", subtitle: "판매 가능 상태 확인", to: "/seller/rooms" },
       { title: "이미지 관리", subtitle: "대표 이미지 정리", to: "/seller/assets" },
-      { title: "판매자 신청", subtitle: "승인 상태 확인", to: "/seller/apply" },
+      { title: "숙소 관리", subtitle: "운영 상태 점검", to: "/seller/lodgings" },
     ],
   };
 }

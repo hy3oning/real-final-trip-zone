@@ -73,6 +73,26 @@ export function DashboardMetricStrip({ items, label }) {
   );
 }
 
+export function DashboardFocusList({ rows }) {
+  return (
+    <div className="opsdash-focus-list">
+      {rows.map((item) => (
+        <Link key={`${item.title}-${item.to}`} to={item.to} className="opsdash-focus-row">
+          <div className="opsdash-focus-main">
+            <div className="opsdash-focus-meta">
+              {item.label ? <span>{item.label}</span> : null}
+              {item.status ? <strong className={`status-pill status-${item.status.toLowerCase()}`}>{item.status}</strong> : null}
+            </div>
+            <strong>{item.title}</strong>
+            <p>{item.meta}</p>
+          </div>
+          <span className="opsdash-row-arrow">{item.actionLabel ?? "보기"}</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 export function DashboardPanel({ eyebrow, title, action, tone = "default", children, className = "" }) {
   const classes = ["opsdash-panel", tone !== "default" ? `is-${tone}` : "", className].filter(Boolean).join(" ");
 
@@ -166,6 +186,32 @@ export function DashboardPerformanceList({ rows }) {
             </div>
           </div>
         </div>
+      ))}
+    </div>
+  );
+}
+
+export function DashboardStayList({ rows }) {
+  return (
+    <div className="opsdash-stay-list">
+      {rows.map((item) => (
+        <article key={`${item.name}-${item.region}`} className="opsdash-stay-row">
+          <div className="opsdash-stay-main">
+            <span>{item.region}</span>
+            <strong>{item.name}</strong>
+            <p>{item.detail}</p>
+          </div>
+          <div className="opsdash-stay-side">
+            <strong className={`status-pill status-${item.status.toLowerCase()}`}>{item.status}</strong>
+            <div className="opsdash-stay-occupancy">
+              <span>점유율</span>
+              <strong>{item.occupancy}</strong>
+            </div>
+            <div className="opsdash-track">
+              <div className="opsdash-fill" style={{ width: item.occupancy }} />
+            </div>
+          </div>
+        </article>
       ))}
     </div>
   );

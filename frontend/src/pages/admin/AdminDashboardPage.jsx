@@ -1,5 +1,15 @@
-import { Link } from "react-router-dom";
 import DashboardLayout from "../../components/layout/DashboardLayout";
+import {
+  DashboardFactGrid,
+  DashboardFocusList,
+  DashboardHero,
+  DashboardLogList,
+  DashboardMetricStrip,
+  DashboardMixList,
+  DashboardPanel,
+  DashboardPerformanceList,
+  DashboardWatchList,
+} from "../../features/dashboard/DashboardUI";
 import { getAdminDashboardViewModel } from "../../features/dashboard/dashboardViewModels";
 import { getAdminDashboardSnapshot } from "../../services/dashboardService";
 
@@ -8,112 +18,71 @@ export default function AdminDashboardPage() {
 
   return (
     <DashboardLayout role="admin">
-      {/* ── Page Header ── */}
-      <div className="dash-page-header">
-        <div className="dash-page-header-copy">
-          <p className="eyebrow">{vm.header.eyebrow}</p>
-          <h1>{vm.header.title}</h1>
-          <p>{vm.header.description}</p>
-        </div>
-      </div>
+      <div className="opsdash is-admin">
+        <DashboardHero
+          eyebrow={vm.header.eyebrow}
+          title={vm.header.title}
+          description={vm.header.description}
+          links={vm.header.links}
+          facts={vm.header.facts}
+          spotlight={vm.header.spotlight}
+          insightTitle="우선 처리 큐"
+          insightRows={vm.watchRows.slice(0, 4).map((item) => ({ ...item, label: item.kind }))}
+          ariaLabel="관리자 빠른 이동"
+        />
 
-      {/* ── Stat Cards ── */}
-      <div className="dash-stat-grid">
-        {vm.metrics.map((item) => (
-          <article key={item.label} className="dash-stat-card">
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
-          </article>
-        ))}
-      </div>
+        <DashboardMetricStrip items={vm.metrics} label="관리자 핵심 지표" />
 
-      {/* ── Main Grid: Queue + Logs ── */}
-      <div className="dash-grid-two">
-        <section className="dash-content-section" style={{ marginBottom: 0 }}>
-          <div className="dash-section-head">
-            <div className="dash-section-head-copy">
-              <h2>우선 처리 큐</h2>
-              <p>승인, 문의, 제재 건을 빠르게 확인</p>
+        <DashboardPanel eyebrow="Workspace" title="오늘 운영 워크보드" tone="strong" className="admin-panel-workboard">
+          <div className="opsdash-workboard admin-workboard">
+            <div className="opsdash-board-section">
+              <div className="opsdash-board-head">
+                <strong>오늘 바로 처리할 항목</strong>
+                <span>승인 · 문의 · 제재</span>
+              </div>
+              <DashboardFocusList rows={vm.watchRows.map((item) => ({ ...item, label: item.kind, actionLabel: "열기" }))} />
+            </div>
+
+            <div className="opsdash-board-rail">
+              <div className="opsdash-board-section">
+                <div className="opsdash-board-head">
+                  <strong>최근 운영 로그</strong>
+                  <span>최근 조치 기록</span>
+                </div>
+                <DashboardLogList rows={vm.logs} />
+              </div>
+
+              <div className="opsdash-board-section">
+                <div className="opsdash-board-head">
+                  <strong>주의 회원과 운영 포인트</strong>
+                  <span>리스크 확인</span>
+                </div>
+                <DashboardWatchList rows={vm.attentionUsers} />
+                <DashboardFactGrid items={vm.facts} />
+              </div>
             </div>
           </div>
-          <div className="dash-queue-list">
-            {vm.watchRows.map((item) => (
-              <div key={`${item.kind}-${item.title}`} className="dash-queue-item">
-                <span className="dash-queue-kind">{item.kind}</span>
-                <div className="dash-queue-main">
-                  <strong>{item.title}</strong>
-                  <p>{item.meta}</p>
-                </div>
-                <span className={`table-code code-${item.status.toLowerCase()}`}>{item.status}</span>
-                <Link className="dash-queue-action" to={item.to}>열기</Link>
-              </div>
-            ))}
-          </div>
-        </section>
+        </DashboardPanel>
 
-        <section className="dash-content-section" style={{ marginBottom: 0 }}>
-          <div className="dash-section-head">
-            <div className="dash-section-head-copy">
-              <h2>관리 로그</h2>
-              <p>최근 운영 조치 기록</p>
+        <DashboardPanel eyebrow="Insights" title="예약 흐름과 상위 성과" className="admin-panel-board">
+          <div className="opsdash-board-grid admin-board-grid">
+            <div className="opsdash-board-section">
+              <div className="opsdash-board-head">
+                <strong>예약 흐름</strong>
+                <span>전체 예약 전환</span>
+              </div>
+              <DashboardMixList rows={vm.reservationMix} />
+            </div>
+
+            <div className="opsdash-board-section">
+              <div className="opsdash-board-head">
+                <strong>판매 성과 상위 숙소</strong>
+                <span>최근 6개월 기준</span>
+              </div>
+              <DashboardPerformanceList rows={vm.sellerPerformance} />
             </div>
           </div>
-          <div className="dash-timeline">
-            {vm.logs.map((item) => (
-              <div key={`${item.title}-${item.time}`} className="dash-timeline-item">
-                <div className="dash-timeline-main">
-                  <strong>{item.title}</strong>
-                  <p>{item.subtitle}</p>
-                </div>
-                <span className="dash-timeline-target">{item.target}</span>
-                <time className="dash-timeline-time">{item.time}</time>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      {/* ── Secondary Grid ── */}
-      <div className="dash-grid-two">
-        <section className="dash-content-section" style={{ marginBottom: 0 }}>
-          <div className="dash-section-head">
-            <div className="dash-section-head-copy">
-              <h2>예약 현황</h2>
-            </div>
-          </div>
-          <div className="dash-ratio-list">
-            {vm.reservationMix.map((item) => (
-              <div key={item.label} className="dash-ratio-row">
-                <div className="dash-ratio-head">
-                  <strong>{item.label}</strong>
-                  <span>{item.ratio}</span>
-                </div>
-                <div className="dash-track">
-                  <div className={`dash-fill${item.tone === "sand" ? " is-sand" : ""}`} style={{ width: item.fill }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="dash-content-section" style={{ marginBottom: 0 }}>
-          <div className="dash-section-head">
-            <div className="dash-section-head-copy">
-              <h2>주의 회원</h2>
-            </div>
-          </div>
-          <div className="dash-watch-list">
-            {vm.attentionUsers.map((item) => (
-              <div key={item.email} className="dash-watch-item">
-                <div className="dash-watch-meta">
-                  <span className={`table-code code-${item.status.toLowerCase()}`}>{item.status}</span>
-                </div>
-                <strong>{item.name}</strong>
-                <p>{item.email}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        </DashboardPanel>
       </div>
     </DashboardLayout>
   );

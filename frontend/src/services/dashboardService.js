@@ -178,6 +178,7 @@ export function getSellerApplicationDraft() {
         businessName: "",
         owner: "",
         account: "",
+        submittedAt: null,
       },
     ])[0] ?? null
   );
@@ -186,6 +187,7 @@ export function getSellerApplicationDraft() {
 export function submitSellerApplication(form) {
   const nextRow = {
     status: "PENDING",
+    submittedAt: new Date().toISOString(),
     ...form,
   };
   writeCollection(COLLECTION_KEYS.sellerApplication, [nextRow]);

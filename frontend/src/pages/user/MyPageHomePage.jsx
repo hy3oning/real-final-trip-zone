@@ -1,17 +1,18 @@
 import { Link } from "react-router-dom";
 import MyPageLayout from "../../components/user/MyPageLayout";
 import {
-  couponRows,
   myBookingRows,
   myPageSections,
   myProfileSummary,
   paymentHistoryRows,
   wishlistRows,
 } from "../../data/mypageData";
+import { getMyCoupons } from "../../services/mypageService";
 
 export default function MyPageHomePage() {
+  const coupons = getMyCoupons();
   const upcomingCount = myBookingRows.filter((item) => item.status !== "COMPLETED").length;
-  const availableCouponCount = couponRows.filter((item) => item.status === "사용 가능").length;
+  const availableCouponCount = coupons.filter((item) => item.status === "사용 가능").length;
   const paidCount = paymentHistoryRows.filter((item) => item.status === "PAID").length;
 
   const overviewItems = [
@@ -24,7 +25,7 @@ export default function MyPageHomePage() {
   return (
     <MyPageLayout>
       <section className="my-list-sheet my-home-sheet">
-        <header className="my-home-topline">
+        <Link to="/my/membership" className="my-home-topline my-home-topline-link">
           <div className="my-home-topline-copy">
             <span className="my-home-label">MY PAGE</span>
             <strong>{myProfileSummary.name}</strong>
@@ -35,7 +36,7 @@ export default function MyPageHomePage() {
             <span className="my-stat-pill">{myProfileSummary.grade} 회원</span>
             <span className="my-stat-pill is-soft">{myProfileSummary.joinedAt}</span>
           </div>
-        </header>
+        </Link>
 
         <section className="my-home-overview" aria-label="마이페이지 요약">
           {overviewItems.map((item) => (

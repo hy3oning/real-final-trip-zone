@@ -36,7 +36,7 @@ export default function LoginPage() {
 
   return (
     <div className="container page-stack">
-      <section className="auth-shell auth-shell-compact">
+      <section className="auth-shell auth-shell-compact auth-shell-login">
         <div className="auth-copy">
           <div
             className="auth-copy-visual"
@@ -63,7 +63,6 @@ export default function LoginPage() {
             <strong>이메일 로그인</strong>
             <span>회원 정보로 바로 로그인</span>
           </div>
-
           <label className="auth-field">
             <span>이메일</span>
             <input
@@ -105,33 +104,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="auth-demo-box">
-            <div className="auth-demo-head">
-              <strong>시현 계정</strong>
-              <span>클릭하면 자동 입력</span>
-            </div>
-            <div className="auth-demo-list">
-              {demoLoginAccounts.map((account) => (
-                <button
-                  key={account.key}
-                  type="button"
-                  className="auth-demo-account"
-                  onClick={() =>
-                    setForm((current) => ({
-                      ...current,
-                      provider: "LOCAL",
-                      email: account.email,
-                      password: account.password,
-                    }))
-                  }
-                >
-                  <strong>{account.label}</strong>
-                  <span>{account.email}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           <button className={`primary-button booking-card-button${canSubmit ? "" : " is-disabled"}`} type="submit">
             로그인
           </button>
@@ -167,6 +139,34 @@ export default function LoginPage() {
             </Link>
           </div>
         </form>
+
+        <aside className="auth-demo-panel auth-demo-panel-side">
+          <div className="auth-demo-head">
+            <strong>시현 계정</strong>
+            <span>배포 전 제거 예정</span>
+          </div>
+          <p className="auth-demo-copy">개발 확인용 계정이다. 클릭하면 로그인 폼에 자동 입력된다.</p>
+          <div className="auth-demo-list">
+            {demoLoginAccounts.map((account) => (
+              <button
+                key={account.key}
+                type="button"
+                className="auth-demo-account"
+                onClick={() =>
+                  setForm((current) => ({
+                    ...current,
+                    provider: "LOCAL",
+                    email: account.email,
+                    password: account.password,
+                  }))
+                }
+              >
+                <strong>{account.label}</strong>
+                <span>{account.email}</span>
+              </button>
+            ))}
+          </div>
+        </aside>
       </section>
     </div>
   );

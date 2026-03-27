@@ -79,7 +79,6 @@ export function getHeaderRoleLinks(session) {
   if (session?.role === "ROLE_HOST") {
     return [
       { to: "/seller", label: "판매자 대시보드" },
-      { to: "/seller/apply", label: "판매자 신청" },
       { to: "/seller/lodgings", label: "숙소 관리" },
       { to: "/seller/rooms", label: "객실 관리" },
       { to: "/seller/reservations", label: "예약 관리" },
@@ -94,6 +93,7 @@ export function getHeaderRoleLinks(session) {
     { to: "/my/mileage", label: "마일리지" },
     { to: "/my/coupons", label: "쿠폰" },
     { to: "/my/profile", label: "내 정보 관리" },
+    { to: "/my/seller-apply", label: "판매자 신청" },
     { to: "/my/payments", label: "결제 내역" },
     { to: "/my/inquiries", label: "문의센터" },
   ];

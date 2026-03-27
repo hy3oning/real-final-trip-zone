@@ -40,7 +40,7 @@ export function makeBookingId(item) {
 export function getProfileFieldGroups(details) {
   return {
     accountInfoRows: details.filter((item) => ["이메일", "전화번호", "회원 등급"].includes(item.label)),
-    accountMetaRows: details.filter((item) => ["로그인 방식", "마케팅 수신", "최근 로그인"].includes(item.label)),
+    accountMetaRows: details.filter((item) => ["비밀번호", "마케팅 수신", "최근 로그인"].includes(item.label)),
   };
 }
 

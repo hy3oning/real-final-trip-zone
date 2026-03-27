@@ -1,3 +1,4 @@
+import { readCollection, writeCollection } from "../lib/mockDb";
 import {
   couponRows,
   myBookingRows,
@@ -18,6 +19,10 @@ import {
 // Booking/payment can adapt to current backend DTOs.
 // Inquiry must keep design-doc target shape first:
 // InquiryRoom + InquiryMessage, OPEN/ANSWERED/CLOSED/BLOCKED.
+
+const COLLECTION_KEYS = {
+  myCoupons: "tripzone-my-coupons",
+};
 
 export function getMyProfileSummary() {
   return myProfileSummary;
@@ -44,7 +49,17 @@ export function getMyPaymentByBookingId(bookingId) {
 }
 
 export function getMyCoupons() {
-  return couponRows;
+  return readCollection(COLLECTION_KEYS.myCoupons, couponRows);
+}
+
+export function claimMyCoupon(coupon) {
+  const rows = getMyCoupons();
+  const exists = rows.some((item) => item.id === coupon.id || item.couponName === coupon.couponName);
+  if (exists) return { ok: false, reason: "duplicate", rows };
+
+  const nextRows = [{ ...coupon }, ...rows];
+  writeCollection(COLLECTION_KEYS.myCoupons, nextRows);
+  return { ok: true, rows: nextRows };
 }
 
 export function getMyWishlist() {

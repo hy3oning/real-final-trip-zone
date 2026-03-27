@@ -1,24 +1,25 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import MyPageLayout from "../../components/user/MyPageLayout";
-import { couponRows } from "../../data/mypageData";
 import {
   getCouponAmount,
   getCouponSummary,
   getCouponToneClass,
   getCouponVisualClass,
 } from "../../features/mypage/mypageViewModels";
+import { getMyCoupons } from "../../services/mypageService";
 
 export default function MyCouponsPage() {
   const [filter, setFilter] = useState("available");
-  const { expiringCount, filteredCoupons } = getCouponSummary(couponRows, filter);
+  const coupons = getMyCoupons();
+  const { expiringCount, filteredCoupons } = getCouponSummary(coupons, filter);
 
   return (
     <MyPageLayout>
       <section className="my-list-sheet coupon-sheet coupon-sheet-v2">
         <div className="mypage-header-row">
           <div className="mypage-header-copy">
-            <strong>쿠폰 {couponRows.length}장</strong>
+            <strong>쿠폰 {coupons.length}장</strong>
             <p>7일 이내 소멸예정 쿠폰 {expiringCount}장</p>
           </div>
           <span className="my-stat-pill is-soft">보유 쿠폰 관리</span>

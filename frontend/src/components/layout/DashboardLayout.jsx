@@ -1,23 +1,22 @@
 import { Link, useLocation } from "react-router-dom";
 
 const ADMIN_MENU = [
-  { label: "대시보드", to: "/admin", icon: "📊" },
-  { label: "회원 관리", to: "/admin/users", icon: "👤" },
-  { label: "판매자 관리", to: "/admin/sellers", icon: "🏢" },
-  { label: "이벤트 · 쿠폰", to: "/admin/events", icon: "🎫" },
-  { label: "문의 모니터링", to: "/admin/inquiries", icon: "💬" },
-  { label: "리뷰 운영", to: "/admin/reviews", icon: "⭐" },
-  { label: "운영 로그", to: "/admin/audit-logs", icon: "📋" },
+  { label: "대시보드", to: "/admin", icon: "01" },
+  { label: "회원 관리", to: "/admin/users", icon: "02" },
+  { label: "판매자 관리", to: "/admin/sellers", icon: "03" },
+  { label: "이벤트 · 쿠폰", to: "/admin/events", icon: "04" },
+  { label: "문의 모니터링", to: "/admin/inquiries", icon: "05" },
+  { label: "리뷰 운영", to: "/admin/reviews", icon: "06" },
+  { label: "운영 로그", to: "/admin/audit-logs", icon: "07" },
 ];
 
 const SELLER_MENU = [
-  { label: "대시보드", to: "/seller", icon: "📊" },
-  { label: "숙소 관리", to: "/seller/lodgings", icon: "🏠" },
-  { label: "객실 관리", to: "/seller/rooms", icon: "🛏️" },
-  { label: "이미지 관리", to: "/seller/assets", icon: "🖼️" },
-  { label: "예약 관리", to: "/seller/reservations", icon: "📅" },
-  { label: "문의 관리", to: "/seller/inquiries", icon: "💬" },
-  { label: "판매자 신청", to: "/seller/apply", icon: "📝" },
+  { label: "대시보드", to: "/seller", icon: "01" },
+  { label: "숙소 관리", to: "/seller/lodgings", icon: "02" },
+  { label: "객실 관리", to: "/seller/rooms", icon: "03" },
+  { label: "이미지 관리", to: "/seller/assets", icon: "04" },
+  { label: "예약 관리", to: "/seller/reservations", icon: "05" },
+  { label: "문의 관리", to: "/seller/inquiries", icon: "06" },
 ];
 
 export default function DashboardLayout({ role, children }) {
@@ -37,6 +36,11 @@ export default function DashboardLayout({ role, children }) {
           </div>
         </div>
 
+        <div className="dash-sidebar-summary">
+          <span>{role === "admin" ? "Operations" : "Workspace"}</span>
+          <strong>{role === "admin" ? "승인, 모니터링, 제재 흐름" : "예약, 숙소, 문의 운영 흐름"}</strong>
+        </div>
+
         <nav className="dash-sidebar-nav">
           {menu.map((item) => {
             const isActive = location.pathname === item.to;
@@ -47,7 +51,7 @@ export default function DashboardLayout({ role, children }) {
                 className={`dash-sidebar-link${isActive ? " is-active" : ""}`}
               >
                 <span className="dash-sidebar-icon">{item.icon}</span>
-                <span>{item.label}</span>
+                <span className="dash-sidebar-label">{item.label}</span>
               </Link>
             );
           })}

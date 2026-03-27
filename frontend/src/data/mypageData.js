@@ -6,6 +6,7 @@ export const myBookingSummaries = [
 
 export const myPageSections = [
   { title: "내 정보 관리", subtitle: "등급과 회원 정보를 확인하고 수정 흐름을 준비합니다.", href: "/my/profile" },
+  { title: "판매자 신청", subtitle: "사업자 정보를 제출하고 승인 상태를 확인합니다.", href: "/my/seller-apply" },
   { title: "쿠폰 리스트", subtitle: "보유 쿠폰을 최신순으로 확인합니다.", href: "/my/coupons" },
   { title: "예약 내역", subtitle: "최신 예약 상태와 후기 작성 흐름을 확인합니다.", href: "/my/bookings" },
   { title: "마일리지 내역", subtitle: "보유 마일리지와 적립/사용 내역을 확인합니다.", href: "/my/mileage" },
@@ -22,10 +23,40 @@ export const myProfileSummary = {
   joinedAt: "2025.06.14 가입",
 };
 
+export const membershipBenefitTiers = [
+  {
+    grade: "Basic",
+    summary: "회원가입 직후 기본 혜택",
+    highlights: ["이벤트 쿠폰 다운로드", "특가 숙소 알림", "예약 내역 관리"],
+  },
+  {
+    grade: "Silver",
+    summary: "3회 이상 예약 고객 혜택",
+    highlights: ["주중 전용 쿠폰 우선 발급", "리뷰 이벤트 추가 응모", "마일리지 적립 우대"],
+  },
+  {
+    grade: "Gold",
+    summary: "현재 내 등급",
+    highlights: ["월간 전용 쿠폰팩", "인기 숙소 얼리 액세스", "결제 혜택 우선 노출"],
+  },
+  {
+    grade: "Platinum",
+    summary: "상위 등급 회원 전용 혜택",
+    highlights: ["시즌 프로모션 선오픈", "프리미엄 객실 특가", "전용 CS 우선 응답"],
+  },
+];
+
+export const membershipMilestones = [
+  { label: "현재 등급", value: "Gold" },
+  { label: "다음 등급까지", value: "예약 2회" },
+  { label: "최근 3개월 예약", value: "4회" },
+  { label: "누적 마일리지", value: "18,400P" },
+];
+
 export const myProfileDetails = [
   { label: "이메일", value: "tripzone@example.com" },
   { label: "전화번호", value: "010-1234-5678" },
-  { label: "로그인 방식", value: "카카오 간편 로그인" },
+  { label: "비밀번호", value: "••••••••" },
   { label: "회원 등급", value: "Gold" },
   { label: "마케팅 수신", value: "동의" },
   { label: "최근 로그인", value: "2026.03.23 10:42" },

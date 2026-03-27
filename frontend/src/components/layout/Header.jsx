@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { membershipMilestones, myBookingRows, myProfileSummary } from "../../data/mypageData";
 import { clearAuthSession, readAuthSession } from "../../features/auth/authSession";
 import { getHeaderRoleLinks, getMembershipLabel } from "../../features/auth/authViewModels";
+import { getMyCoupons } from "../../services/mypageService";
 
 export default function Header() {
   const location = useLocation();
@@ -33,8 +35,18 @@ export default function Header() {
     navigate("/");
   };
 
-  const membershipLabel = getMembershipLabel(session);
+  const handleMembershipClick = (event) => {
+    event.stopPropagation();
+    setMenuOpen(false);
+    navigate("/my/membership");
+  };
+
+  const membershipLabel = session?.role === "ROLE_USER" ? myProfileSummary.grade : getMembershipLabel(session);
+  const profileLabel = session?.role === "ROLE_USER" ? myProfileSummary.name : session?.name;
   const roleLinks = getHeaderRoleLinks(session);
+  const availableCouponCount = session?.role === "ROLE_USER" ? getMyCoupons().filter((item) => item.status === "사용 가능").length : 0;
+  const upcomingBookingCount = session?.role === "ROLE_USER" ? myBookingRows.filter((item) => item.status !== "COMPLETED").length : 0;
+  const mileageValue = membershipMilestones.find((item) => item.label === "누적 마일리지")?.value ?? "0P";
 
   return (
     <header className="header">
@@ -58,19 +70,44 @@ export default function Header() {
                   <span className="header-profile-badge-sun" />
                 </span>
                 <span className="header-profile-copy">
-                  <strong>{session.name}</strong>
-                  <span>{membershipLabel} 회원</span>
+                  <strong>{profileLabel}</strong>
+                  <span
+                    className="header-membership-link"
+                    role="link"
+                    tabIndex={0}
+                    onClick={handleMembershipClick}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleMembershipClick(event);
+                      }
+                    }}
+                  >
+                    {membershipLabel} 회원
+                  </span>
                 </span>
                 <span className="header-profile-toggle" aria-hidden="true">☰</span>
               </button>
               {menuOpen ? (
                 <div className="header-profile-dropdown">
-                  <div className="header-profile-dropdown-head">
-                    <strong>{session.name}</strong>
-                    <p>
-                      <span>{membershipLabel}</span> 회원
-                    </p>
-                  </div>
+                  {session?.role === "ROLE_USER" ? (
+                    <div className="header-profile-summary">
+                      <div className="header-profile-stats">
+                        <Link className="header-profile-stat" to="/my/mileage">
+                          <span>마일리지</span>
+                          <strong>{mileageValue}</strong>
+                        </Link>
+                        <Link className="header-profile-stat" to="/my/coupons">
+                          <span>쿠폰</span>
+                          <strong>{availableCouponCount}장</strong>
+                        </Link>
+                        <Link className="header-profile-stat" to="/my/bookings">
+                          <span>예약중</span>
+                          <strong>{upcomingBookingCount}건</strong>
+                        </Link>
+                      </div>
+                    </div>
+                  ) : null}
                   <div className="header-profile-dropdown-links">
                     {roleLinks.map((item) => (
                       <Link key={item.to} className="header-dropdown-link" to={item.to}>
