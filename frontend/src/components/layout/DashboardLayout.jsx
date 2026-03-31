@@ -17,7 +17,6 @@ const SELLER_MENU = [
   { label: "이미지 관리", to: "/seller/assets", icon: "04" },
   { label: "예약 관리", to: "/seller/reservations", icon: "05" },
   { label: "문의 관리", to: "/seller/inquiries", icon: "06" },
-  { label: "호스트 신청", to: "/seller/apply", icon: "07" },
 ];
 
 export default function DashboardLayout({ role, children }) {

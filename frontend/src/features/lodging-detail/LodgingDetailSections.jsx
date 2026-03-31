@@ -132,7 +132,7 @@ export function ReviewSection({ authSession, canWriteReview, galleryImages, lodg
       )}
       <div className="detail-review-list">
         {reviews.map((item, index) => (
-          <article key={`${item.author}-${item.stay}`} className="detail-review-item">
+          <article key={item.id ?? `${item.author}-${item.stay}-${index}`} className="detail-review-item">
             <div className="detail-review-head">
               <strong>{item.author}</strong>
               <span className="detail-review-stars-readonly">
@@ -143,7 +143,11 @@ export function ReviewSection({ authSession, canWriteReview, galleryImages, lodg
             <p>{item.body}</p>
             <div className="detail-review-gallery">
               {(item.images?.length ? item.images : galleryImages.slice(0, 2)).map((image, imageIndex) => (
-                <div key={`${item.author}-${imageIndex}`} className="detail-review-thumb" style={{ backgroundImage: `url(${image}${item.images?.length ? "" : index === 1 ? "&sat=6" : ""})` }} />
+                <div
+                  key={`${item.id ?? item.author}-${imageIndex}`}
+                  className="detail-review-thumb"
+                  style={{ backgroundImage: `url(${image}${item.images?.length ? "" : index === 1 ? "&sat=6" : ""})` }}
+                />
               ))}
             </div>
           </article>

@@ -2286,6 +2286,81 @@
   color: var(--text-soft);
 }
 
+.home-skeleton-grid,
+.lodging-results-skeleton {
+  display: grid;
+  gap: 16px;
+}
+
+.home-skeleton-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.lodging-results-skeleton {
+  grid-template-columns: repeat(auto-fill, minmax(236px, 1fr));
+}
+
+.home-skeleton-card,
+.lodging-skeleton-card {
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid rgba(29, 38, 31, 0.06);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+  padding: 12px;
+}
+
+.home-skeleton-visual,
+.lodging-skeleton-visual,
+.home-skeleton-line,
+.lodging-skeleton-line,
+.lodging-skeleton-price {
+  background: linear-gradient(90deg, rgba(219, 234, 231, 0.6) 0%, rgba(240, 247, 245, 0.95) 50%, rgba(219, 234, 231, 0.6) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.2s linear infinite;
+}
+
+.home-skeleton-visual,
+.lodging-skeleton-visual {
+  border-radius: 14px;
+  aspect-ratio: 1.5 / 1;
+  margin-bottom: 12px;
+}
+
+.home-skeleton-line,
+.lodging-skeleton-line {
+  height: 12px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.home-skeleton-line-title,
+.lodging-skeleton-line-title {
+  height: 18px;
+  width: 72%;
+}
+
+.home-skeleton-line-short,
+.lodging-skeleton-line-short {
+  width: 46%;
+}
+
+.lodging-skeleton-price {
+  width: 38%;
+  height: 28px;
+  border-radius: 12px;
+  margin-top: 16px;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 .lodging-compact-card {
   display: flex;
   flex-direction: column;

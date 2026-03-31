@@ -14,9 +14,10 @@ import {
   parseLodgingSearchState,
 } from "../../features/lodging-list/lodgingListViewModel";
 import { clamp, formatDateSummary, parseISO, toISO } from "../../features/lodging-list/lodgingListUtils";
-import { getLodgings, getSearchSuggestionItems } from "../../services/lodgingService";
+import { getCachedLodgingsSnapshot, getLodgings, getSearchSuggestionItems } from "../../services/lodgingService";
 
 export default function LodgingListPage() {
+  const cachedLodgings = getCachedLodgingsSnapshot();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchShellRef = useRef(null);
   const toolbarRef = useRef(null);
@@ -27,7 +28,7 @@ export default function LodgingListPage() {
   const calendarPanelRef = useRef(null);
   const guestPanelRef = useRef(null);
   const [mapInstance, setMapInstance] = useState(null);
-  const [lodgings, setLodgings] = useState([]);
+  const [lodgings, setLodgings] = useState(cachedLodgings);
   const [searchSuggestionItems, setSearchSuggestionItems] = useState([]);
   const filters = parseLodgingSearchState(searchParams, homeSearchDefaults);
   const keyword = filters.keyword;
@@ -63,7 +64,8 @@ export default function LodgingListPage() {
 
     async function loadLodgingData() {
       try {
-        const [nextLodgings, nextSuggestions] = await Promise.all([getLodgings(), getSearchSuggestionItems()]);
+        const nextLodgings = await getLodgings();
+        const nextSuggestions = await getSearchSuggestionItems(nextLodgings);
         if (cancelled) return;
         setLodgings(nextLodgings);
         setSearchSuggestionItems(nextSuggestions);
@@ -236,7 +238,7 @@ export default function LodgingListPage() {
         <div className="list-hero-meta">
           <div className="list-hero-stat">
             <span>선택 숙소</span>
-            <strong>{selectedLodging?.name ?? "불러오는 중"}</strong>
+            <strong>{selectedLodging?.name ?? "추천 숙소 준비 중"}</strong>
           </div>
           <div className="list-hero-stat">
             <span>정렬</span>
@@ -346,19 +348,26 @@ export default function LodgingListPage() {
       />
 
       <div className="list-results-head" aria-live="polite">
-        <strong>선택 숙소: {selectedLodging?.name ?? "불러오는 중"}</strong>
+        <strong>선택 숙소: {selectedLodging?.name ?? "추천 숙소 준비 중"}</strong>
         <span>
           {selectedLodging
             ? `${selectedLodging.region} · ${selectedLodging.district} · ${selectedLodging.price}`
-            : "조건에 맞는 숙소를 불러오고 있어요."}
+            : "조건에 맞는 숙소를 정리하고 있어요."}
         </span>
       </div>
 
       {!lodgings.length ? (
         <section className="lodging-results">
-          <div className="list-empty-state list-empty-state-full">
-            <strong>숙소 목록을 불러오는 중입니다.</strong>
-            <p>백엔드에서 숙소 데이터를 가져오고 있어요.</p>
+          <div className="lodging-results-skeleton" aria-hidden="true">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="lodging-skeleton-card">
+                <div className="lodging-skeleton-visual" />
+                <div className="lodging-skeleton-line lodging-skeleton-line-title" />
+                <div className="lodging-skeleton-line" />
+                <div className="lodging-skeleton-line lodging-skeleton-line-short" />
+                <div className="lodging-skeleton-price" />
+              </div>
+            ))}
           </div>
         </section>
       ) : (

@@ -41,7 +41,10 @@ export default function LoginPage() {
   };
 
   const handleSocialLogin = async (providerKey) => {
+    if (isSubmitting) return;
+
     setErrorMessage("");
+    setIsSubmitting(true);
 
     try {
       if (providerKey === "KAKAO") {
@@ -58,6 +61,8 @@ export default function LoginPage() {
       commitSession(session);
     } catch (error) {
       setErrorMessage(error.message || "소셜 로그인에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -149,6 +154,7 @@ export default function LoginPage() {
                   key={provider.key}
                   type="button"
                   className={`auth-provider-line auth-provider-${provider.key.toLowerCase()}${selectedProvider.key === provider.key ? " is-active" : ""}`}
+                  disabled={isSubmitting}
                   onClick={() => handleSocialLogin(provider.key)}
                 >
                   <span className="auth-provider-mark" aria-hidden="true">

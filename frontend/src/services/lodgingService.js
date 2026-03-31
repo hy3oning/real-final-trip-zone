@@ -3,11 +3,15 @@ import { get, getApiBaseUrl, post } from "../lib/appClient";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1400&q=80";
+const LODGINGS_CACHE_KEY = "tripzone-lodgings-cache-v1";
+const LODGINGS_CACHE_TTL = 1000 * 60 * 5;
 const FALLBACK_COORDS = {
   latitude: 37.5665,
   longitude: 126.978,
 };
 const fallbackLodgingMap = new Map(fallbackLodgings.map((item) => [Number(item.id), item]));
+let lodgingsMemoryCache = null;
+let lodgingsRequestPromise = null;
 
 function isCorruptedText(value) {
   if (typeof value !== "string") return false;
@@ -30,6 +34,28 @@ function formatCurrency(value) {
   const numeric = Number(value ?? 0);
   if (!Number.isFinite(numeric) || numeric <= 0) return "문의 필요";
   return `${numeric.toLocaleString()}원`;
+}
+
+function normalizeReviewCount(value) {
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) {
+    return `${numeric.toLocaleString()}개`;
+  }
+  if (typeof value !== "string") return "0개";
+  const match = value.match(/(\d[\d,]*)/);
+  if (!match) return "0개";
+  return `${match[1]}개`;
+}
+
+function normalizeRating(primary, fallback) {
+  const numeric = Number(primary);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return numeric.toFixed(1);
+  }
+  if (typeof fallback === "string" && fallback.trim()) {
+    return fallback;
+  }
+  return "0.0";
 }
 
 function buildDistrict(address, region) {
@@ -118,8 +144,8 @@ function mapLodging(dto) {
     checkOutTime: dto.checkOutTime ?? "11:00",
     status: dto.status,
     highlights: buildHighlights(dto),
-    rating: "4.8",
-    reviewCount: "후기 준비 중",
+    rating: normalizeRating(dto.reviewAverage, fallback?.rating),
+    reviewCount: normalizeReviewCount(dto.reviewCount ?? fallback?.reviewCount),
     benefit: firstRoom ? `${firstRoomName} 예약 가능` : "객실 옵션 확인 가능",
     review: "실제 후기 연동 전입니다.",
     cancellation: "취소 규정은 예약 단계에서 확인해 주세요.",
@@ -140,22 +166,84 @@ function buildCollection(ids, title, region, rows) {
   };
 }
 
+function readCachedLodgings() {
+  if (lodgingsMemoryCache?.rows?.length) {
+    return lodgingsMemoryCache.rows;
+  }
+
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(LODGINGS_CACHE_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    if (!parsed?.savedAt || !Array.isArray(parsed.rows)) return [];
+    if (Date.now() - parsed.savedAt > LODGINGS_CACHE_TTL) return [];
+
+    lodgingsMemoryCache = parsed;
+    return parsed.rows;
+  } catch {
+    return [];
+  }
+}
+
+function writeCachedLodgings(rows) {
+  const payload = {
+    savedAt: Date.now(),
+    rows,
+  };
+
+  lodgingsMemoryCache = payload;
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(LODGINGS_CACHE_KEY, JSON.stringify(payload));
+  } catch {
+    // 저장 공간 문제는 무시하고 네트워크 결과만 사용한다.
+  }
+}
+
+export function getCachedLodgingsSnapshot() {
+  return readCachedLodgings();
+}
+
 export async function getLodgings() {
-  const rows = await get("/api/lodgings/list");
-  const rowsWithRooms = await Promise.all(
-    rows.map(async (row) => {
-      if (Array.isArray(row.rooms) && row.rooms.length) return row;
+  const cachedRows = readCachedLodgings();
+  if (cachedRows.length) {
+    return cachedRows;
+  }
 
-      try {
-        const rooms = await get(`/api/rooms/lodging/${row.lodgingNo}`);
-        return { ...row, rooms };
-      } catch {
-        return row;
-      }
-    }),
-  );
+  if (!lodgingsRequestPromise) {
+    lodgingsRequestPromise = (async () => {
+      const rows = await get("/api/lodgings/list");
+      const rowsWithRooms = await Promise.all(
+        rows.map(async (row) => {
+          if (Array.isArray(row.rooms) && row.rooms.length) return row;
 
-  return rowsWithRooms.map(mapLodging);
+          try {
+            const rooms = await get(`/api/rooms/lodging/${row.lodgingNo}`);
+            return { ...row, rooms };
+          } catch {
+            return row;
+          }
+        }),
+      );
+
+      const mappedRows = rowsWithRooms.map(mapLodging);
+      writeCachedLodgings(mappedRows);
+      return mappedRows;
+    })().finally(() => {
+      lodgingsRequestPromise = null;
+    });
+  }
+
+  return lodgingsRequestPromise;
 }
 
 export async function getLodgingById(lodgingId) {
@@ -168,8 +256,8 @@ export async function getLodgingDetailById(lodgingId) {
   return mapLodging(row);
 }
 
-export async function getLodgingCollections() {
-  const rows = await getLodgings();
+export async function getLodgingCollections(prefetchedRows) {
+  const rows = prefetchedRows ?? await getLodgings();
 
   return [
     buildCollection(
@@ -188,8 +276,8 @@ export async function getLodgingCollections() {
   ].filter(Boolean);
 }
 
-export async function getSearchSuggestionItems() {
-  const rows = await getLodgings();
+export async function getSearchSuggestionItems(prefetchedRows) {
+  const rows = prefetchedRows ?? await getLodgings();
   const unique = new Map();
 
   rows.forEach((lodging) => {

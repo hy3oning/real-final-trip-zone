@@ -9,6 +9,10 @@ const KAKAO_REDIRECT_URI =
   import.meta.env.VITE_KAKAO_REDIRECT_URI ?? "http://localhost:5173/auth/kakao/callback";
 const NAVER_REDIRECT_URI =
   import.meta.env.VITE_NAVER_REDIRECT_URI ?? "http://localhost:5173/auth/naver/callback";
+let googleScriptPromise = null;
+let googleInitialized = false;
+let googleLoginPromise = null;
+let googleLoginHandlers = null;
 
 export function getSelectedAuthProvider(providerKey) {
   return authProviders.find((provider) => provider.key === providerKey) ?? authProviders[0];
@@ -119,7 +123,11 @@ export async function loginWithGoogleIdToken(idToken) {
 }
 
 export function loadGoogleScript() {
-  return new Promise((resolve, reject) => {
+  if (googleScriptPromise) {
+    return googleScriptPromise;
+  }
+
+  googleScriptPromise = new Promise((resolve, reject) => {
     if (!GOOGLE_CLIENT_ID) {
       reject(new Error("Google client id is not configured."));
       return;
@@ -146,30 +154,73 @@ export function loadGoogleScript() {
     script.onerror = () => reject(new Error("Google login script could not be loaded."));
     document.head.appendChild(script);
   });
+
+  return googleScriptPromise;
+}
+
+function resetGoogleLoginHandlers() {
+  googleLoginPromise = null;
+  googleLoginHandlers = null;
+}
+
+function ensureGoogleInitialized(google) {
+  if (googleInitialized) {
+    return;
+  }
+
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: async (response) => {
+      const handlers = googleLoginHandlers;
+      resetGoogleLoginHandlers();
+
+      if (!handlers) {
+        return;
+      }
+
+      try {
+        const session = await loginWithGoogleIdToken(response.credential);
+        handlers.resolve(session);
+      } catch (error) {
+        handlers.reject(error);
+      }
+    },
+  });
+
+  googleInitialized = true;
 }
 
 export async function loginWithGooglePopup() {
+  if (googleLoginPromise) {
+    return googleLoginPromise;
+  }
+
   const google = await loadGoogleScript();
+  ensureGoogleInitialized(google);
 
-  return new Promise((resolve, reject) => {
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: async (response) => {
-        try {
-          const session = await loginWithGoogleIdToken(response.credential);
-          resolve(session);
-        } catch (error) {
-          reject(error);
-        }
-      },
-    });
+  googleLoginPromise = new Promise((resolve, reject) => {
+    googleLoginHandlers = { resolve, reject };
 
+    google.accounts.id.cancel?.();
     google.accounts.id.prompt((notification) => {
-      if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) {
-        reject(new Error("Google login could not be started."));
+      if (!googleLoginHandlers) {
+        return;
+      }
+
+      if (notification.isNotDisplayed?.()) {
+        resetGoogleLoginHandlers();
+        reject(new Error("Google 로그인 창을 열 수 없습니다. 브라우저의 FedCM 또는 서드파티 로그인 설정을 확인하세요."));
+        return;
+      }
+
+      if (notification.isSkippedMoment?.()) {
+        resetGoogleLoginHandlers();
+        reject(new Error("Google 로그인 요청이 취소되었거나 현재 브라우저에서 차단되었습니다."));
       }
     });
   });
+
+  return googleLoginPromise;
 }
 
 export async function logoutCurrentSession() {
@@ -227,7 +278,6 @@ export function getHeaderRoleLinks(session) {
       { to: "/seller/rooms", label: "객실 관리" },
       { to: "/seller/reservations", label: "예약 관리" },
       { to: "/seller/inquiries", label: "문의 관리" },
-      { to: "/seller/apply", label: "호스트 신청" },
     ];
   }
 

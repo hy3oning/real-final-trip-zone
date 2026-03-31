@@ -189,8 +189,14 @@ async function getCurrentHostProfile() {
   const session = readAuthSession();
   if (!session?.userNo) return null;
 
-  const hosts = await get("/api/hosts");
-  return hosts.find((item) => Number(item.userNo) === Number(session.userNo)) ?? null;
+  try {
+    return await get("/api/mypage/host-profile");
+  } catch (error) {
+    if (error.message?.includes("호스트 신청 정보가 없습니다.") || error.message?.includes("HTTP 404")) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export function getDashboardDataSource() {
@@ -218,8 +224,8 @@ export async function updateAdminUserStatus(userNo, nextStatus) {
 }
 
 export async function getAdminSellers() {
-  const rows = await get("/api/hosts");
-  return rows.map(mapHostProfileDto);
+  const response = await get("/api/hosts?page=1&size=100");
+  return (response.dtoList ?? []).map(mapHostProfileDto);
 }
 
 export async function updateAdminSellerStatus(hostNo, nextStatus) {
@@ -235,8 +241,7 @@ export async function updateAdminSellerStatus(hostNo, nextStatus) {
     throw new Error("지원하지 않는 판매자 상태입니다.");
   }
 
-  const rows = await get("/api/hosts");
-  return rows.map(mapHostProfileDto);
+  return getAdminSellers();
 }
 
 export async function getAdminEvents() {
@@ -451,6 +456,7 @@ export async function submitSellerApplication(form) {
     businessNumber: form.businessNo.trim(),
     businessName: form.businessName.trim(),
     ownerName: form.owner.trim(),
+    account: form.account.trim(),
   };
 
   const host = await getCurrentHostProfile();
