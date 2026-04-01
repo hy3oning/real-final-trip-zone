@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import MyPageLayout from "../../components/user/MyPageLayout";
+import DashboardLayout from "../../components/layout/DashboardLayout";
 import {
   getSellerApplicationDraft,
   getSellerApplicationSteps,
@@ -29,7 +29,7 @@ function formatSubmittedAt(value) {
   }).format(date);
 }
 
-export default function MySellerApplyPage() {
+export default function SellerApplyPage() {
   const [status, setStatus] = useState("READY");
   const [submittedAt, setSubmittedAt] = useState(null);
   const [notice, setNotice] = useState("");
@@ -118,12 +118,13 @@ export default function MySellerApplyPage() {
   };
 
   return (
-    <MyPageLayout>
+    <DashboardLayout role="seller">
+      <>
         <form className="my-form-sheet" onSubmit={handleSubmit} noValidate>
           <div className="mypage-header-row">
             <div className="mypage-header-copy">
               <strong>호스트 신청</strong>
-              <p>사업자 정보를 제출하고 승인 결과를 이 화면에서 바로 확인합니다.</p>
+              <p>사업자 정보를 제출하고 승인 결과를 판매자센터에서 바로 확인합니다.</p>
             </div>
           </div>
 
@@ -131,7 +132,7 @@ export default function MySellerApplyPage() {
             <div className="seller-apply-hero-copy">
               <span className="seller-apply-eyebrow">Seller Onboarding</span>
               <strong>{getStatusLabel(status)} 상태입니다.</strong>
-              <p>신청 후 승인 전까지는 일반회원 흐름을 유지하고, 승인 완료 시 판매자센터 기능이 열립니다.</p>
+              <p>승인 완료 전까지는 신청 상태를 유지하고, 승인 후 판매자 운영 기능을 이어서 사용합니다.</p>
             </div>
             <div className={`seller-apply-status-card ${statusToneClass}`}>
               <span>현재 상태</span>
@@ -173,7 +174,7 @@ export default function MySellerApplyPage() {
                 </article>
                 <article className="seller-apply-note-card">
                   <span>확인 위치</span>
-                  <strong>마이페이지와 헤더 메뉴에서 상태 확인</strong>
+                  <strong>판매자센터 메뉴에서 상태 확인</strong>
                 </article>
               </div>
             </div>
@@ -216,11 +217,12 @@ export default function MySellerApplyPage() {
                 <button type="submit" className="coupon-action-button inquiry-submit-link" disabled={isSubmitting}>
                   {isSubmitting ? "제출 중..." : "신청 제출"}
                 </button>
-                <Link className="text-link" to="/my/profile">내 정보 관리</Link>
+                <Link className="text-link" to="/seller">판매자센터 홈</Link>
               </div>
             </div>
           </section>
         </form>
-    </MyPageLayout>
+      </>
+    </DashboardLayout>
   );
 }

@@ -1,11 +1,32 @@
 import { authProviders } from "../../data/authData";
 import { post } from "../../lib/appClient";
-import { writeAuthSession } from "./authSession";
+import { clearAuthSession, readAuthSession, writeAuthSession } from "./authSession";
 
-const GOOGLE_CLIENT_ID = "1022906861001-f2tf54sjdgi64nivbqhtevhsaubdh9js.apps.googleusercontent.com";
-const KAKAO_CLIENT_ID = "bccf0774846b742756b3ff66558e4269";
-const NAVER_CLIENT_ID = "PqkeWT1NEiTtIXw12Rc4";
-const APP_ORIGIN = typeof window !== "undefined" ? window.location.origin : "http://localhost:5173";
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
+const KAKAO_CLIENT_ID = import.meta.env.VITE_KAKAO_CLIENT_ID ?? "bccf0774846b742756b3ff66558e4269";
+const NAVER_CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID ?? "PqkeWT1NEiTtIXw12Rc4";
+const LOCAL_SOCIAL_ORIGIN = "http://localhost:5173";
+
+function resolveAppOrigin() {
+  if (import.meta.env.VITE_APP_ORIGIN) {
+    return import.meta.env.VITE_APP_ORIGIN;
+  }
+
+  if (typeof window === "undefined") {
+    return LOCAL_SOCIAL_ORIGIN;
+  }
+
+  const { hostname } = window.location;
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return LOCAL_SOCIAL_ORIGIN;
+  }
+
+  return window.location.origin;
+}
+
+const APP_ORIGIN = resolveAppOrigin();
+const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI ?? `${APP_ORIGIN}/auth/kakao/callback`;
+const NAVER_REDIRECT_URI = import.meta.env.VITE_NAVER_REDIRECT_URI ?? `${APP_ORIGIN}/auth/naver/callback`;
 
 function getLandingPath(roleNames = []) {
   if (roleNames.includes("ROLE_ADMIN")) return "/admin";
@@ -15,6 +36,10 @@ function getLandingPath(roleNames = []) {
 
 export function getSelectedAuthProvider(providerKey) {
   return authProviders.find((provider) => provider.key === providerKey) ?? authProviders[0];
+}
+
+export function isGoogleLoginAvailable() {
+  return Boolean(GOOGLE_CLIENT_ID);
 }
 
 export function createAuthSessionPayloadFromResponse(response, email, provider = "LOCAL") {
@@ -61,24 +86,29 @@ export async function signupWithCredentials(form) {
 }
 
 export function getKakaoAuthUrl() {
-  const redirectUri = `${APP_ORIGIN}/auth/kakao/callback`;
-  return `https://kauth.kakao.com/oauth/authorize?client_id=${encodeURIComponent(KAKAO_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
+  return `https://kauth.kakao.com/oauth/authorize?client_id=${encodeURIComponent(KAKAO_CLIENT_ID)}&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}&response_type=code`;
 }
 
 export function getNaverAuthUrl() {
-  const redirectUri = `${APP_ORIGIN}/auth/naver/callback`;
   const state = crypto.randomUUID();
   window.sessionStorage.setItem("tripzone-naver-state", state);
-  return `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${encodeURIComponent(NAVER_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`;
+  return `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${encodeURIComponent(NAVER_CLIENT_ID)}&redirect_uri=${encodeURIComponent(NAVER_REDIRECT_URI)}&state=${encodeURIComponent(state)}`;
 }
 
 export async function loginWithSocialCode(provider, code, state) {
   const endpoint = provider === "KAKAO" ? "/api/auth/kakao" : "/api/auth/naver";
-  const response = await post(endpoint, provider === "NAVER" ? { code, state } : { code });
+  const payload =
+    provider === "NAVER"
+      ? { code, state }
+      : { code, redirectUri: KAKAO_REDIRECT_URI };
+  const response = await post(endpoint, payload);
   return createAuthSessionPayloadFromResponse(response, `${provider.toLowerCase()}@tripzone.social`, provider);
 }
 
 export async function loginWithGoogleIdToken(idToken) {
+  if (!GOOGLE_CLIENT_ID) {
+    throw new Error("구글 로그인 설정이 아직 연결되지 않았습니다.");
+  }
   const response = await post("/api/auth/google", { idToken });
   return createAuthSessionPayloadFromResponse(response, "google@tripzone.social", "GOOGLE");
 }
@@ -109,6 +139,9 @@ export function loadGoogleScript() {
 }
 
 export async function loginWithGooglePopup() {
+  if (!GOOGLE_CLIENT_ID) {
+    throw new Error("구글 로그인 설정이 아직 연결되지 않았습니다.");
+  }
   const google = await loadGoogleScript();
 
   return new Promise((resolve, reject) => {
@@ -126,10 +159,27 @@ export async function loginWithGooglePopup() {
 
     google.accounts.id.prompt((notification) => {
       if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) {
-        reject(new Error("Google login could not be started."));
+        reject(new Error("Google 로그인 창을 열 수 없습니다. 브라우저의 FedCM 또는 서드파티 로그인 설정을 확인하세요."));
       }
     });
   });
+}
+
+export async function logoutCurrentSession() {
+  const session = readAuthSession();
+
+  if (!session?.refreshToken) {
+    clearAuthSession();
+    return;
+  }
+
+  try {
+    await post("/api/auth/logout", {
+      refreshToken: session.refreshToken,
+    });
+  } finally {
+    clearAuthSession();
+  }
 }
 
 export function getMembershipLabel(session) {

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import {
   DashboardFactGrid,
@@ -13,7 +14,44 @@ import { getAdminDashboardViewModel } from "../../features/dashboard/dashboardVi
 import { getAdminDashboardSnapshot } from "../../services/dashboardService";
 
 export default function AdminDashboardPage() {
-  const vm = getAdminDashboardViewModel(getAdminDashboardSnapshot());
+  const [snapshot, setSnapshot] = useState({
+    users: [],
+    sellers: [],
+    adminInquiries: [],
+    auditLogs: [],
+    adminTasks: [],
+  });
+  const [notice, setNotice] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const vm = getAdminDashboardViewModel(snapshot);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSnapshot() {
+      try {
+        setIsLoading(true);
+        const nextSnapshot = await getAdminDashboardSnapshot();
+        if (cancelled) return;
+        setSnapshot(nextSnapshot);
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Failed to load admin dashboard snapshot.", error);
+        setNotice("관리자 대시보드 데이터를 불러오지 못했습니다.");
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadSnapshot();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const priorityRows = [...vm.watchRows]
     .sort((a, b) => {
       const score = (item) => {
@@ -48,6 +86,8 @@ export default function AdminDashboardPage() {
   return (
     <DashboardLayout role="admin">
       <div className="opsdash is-admin">
+        {isLoading ? <div className="my-empty-inline">관리자 대시보드를 불러오는 중입니다.</div> : null}
+        {notice ? <div className="my-empty-inline">{notice}</div> : null}
         <div className="admin-top-grid">
           <DashboardPanel
             eyebrow="Priority Queue"

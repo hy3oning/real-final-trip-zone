@@ -14,9 +14,10 @@ import {
   parseLodgingSearchState,
 } from "../../features/lodging-list/lodgingListViewModel";
 import { clamp, formatDateSummary, parseISO, toISO } from "../../features/lodging-list/lodgingListUtils";
-import { getLodgings, getSearchSuggestionItems } from "../../services/lodgingService";
+import { getCachedLodgingsSnapshot, getLodgings, getSearchSuggestionItems } from "../../services/lodgingService";
 
 export default function LodgingListPage() {
+  const cachedLodgings = getCachedLodgingsSnapshot();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchShellRef = useRef(null);
   const toolbarRef = useRef(null);
@@ -27,7 +28,7 @@ export default function LodgingListPage() {
   const calendarPanelRef = useRef(null);
   const guestPanelRef = useRef(null);
   const [mapInstance, setMapInstance] = useState(null);
-  const [lodgings, setLodgings] = useState([]);
+  const [lodgings, setLodgings] = useState(cachedLodgings);
   const [searchSuggestionItems, setSearchSuggestionItems] = useState([]);
   const filters = parseLodgingSearchState(searchParams, homeSearchDefaults);
   const keyword = filters.keyword;
@@ -63,7 +64,8 @@ export default function LodgingListPage() {
 
     async function loadLodgingData() {
       try {
-        const [nextLodgings, nextSuggestions] = await Promise.all([getLodgings(), getSearchSuggestionItems()]);
+        const nextLodgings = await getLodgings();
+        const nextSuggestions = await getSearchSuggestionItems(nextLodgings);
         if (cancelled) return;
         setLodgings(nextLodgings);
         setSearchSuggestionItems(nextSuggestions);
@@ -79,10 +81,22 @@ export default function LodgingListPage() {
     };
   }, []);
 
-  const allSuggestionItems = useMemo(() => buildSuggestionItems(lodgings, searchSuggestionItems), [lodgings, searchSuggestionItems]);
-  const filteredSuggestions = useMemo(() => filterSuggestions(allSuggestionItems, searchForm.keyword), [allSuggestionItems, searchForm.keyword]);
-  const optionCounts = useMemo(() => buildOptionCounts(lodgings), [lodgings]);
-  const filteredLodgings = useMemo(() => filterLodgings(lodgings, { ...filters, minPrice, maxPrice }), [filters, lodgings, maxPrice, minPrice]);
+  const allSuggestionItems = useMemo(() => {
+    return buildSuggestionItems(lodgings, searchSuggestionItems);
+  }, [lodgings, searchSuggestionItems]);
+
+  const filteredSuggestions = useMemo(() => {
+    return filterSuggestions(allSuggestionItems, searchForm.keyword);
+  }, [allSuggestionItems, searchForm.keyword]);
+
+  const optionCounts = useMemo(() => {
+    return buildOptionCounts(lodgings);
+  }, [lodgings]);
+
+  const filteredLodgings = useMemo(() => {
+    return filterLodgings(lodgings, { ...filters, minPrice, maxPrice });
+  }, [filters, maxPrice, minPrice]);
+
   const [activeLodgingId, setActiveLodgingId] = useState(null);
   const selectedLodging = filteredLodgings.find((item) => item.id === activeLodgingId) ?? filteredLodgings[0] ?? null;
   const activeFilterCount = filterSummary.length + (availableOnly ? 1 : 0);
@@ -104,7 +118,6 @@ export default function LodgingListPage() {
         setActivePanel(null);
       }
     };
-
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
@@ -126,10 +139,8 @@ export default function LodgingListPage() {
   const focusLodging = (lodgingId) => {
     setActiveLodgingId(lodgingId);
     if (!mapInstance) return;
-
     const target = filteredLodgings.find((lodging) => lodging.id === lodgingId);
     if (!target) return;
-
     const latitude = Number(target.latitude);
     const longitude = Number(target.longitude);
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
@@ -144,10 +155,8 @@ export default function LodgingListPage() {
 
   useEffect(() => {
     if (!mapInstance || !activeLodgingId) return;
-
     const target = filteredLodgings.find((lodging) => lodging.id === activeLodgingId);
     if (!target) return;
-
     const latitude = Number(target.latitude);
     const longitude = Number(target.longitude);
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
@@ -229,7 +238,7 @@ export default function LodgingListPage() {
         <div className="list-hero-meta">
           <div className="list-hero-stat">
             <span>선택 숙소</span>
-            <strong>{selectedLodging?.name ?? "불러오는 중"}</strong>
+            <strong>{selectedLodging?.name ?? "추천 숙소 준비 중"}</strong>
           </div>
           <div className="list-hero-stat">
             <span>정렬</span>
@@ -238,7 +247,11 @@ export default function LodgingListPage() {
         </div>
       </section>
 
-      <form ref={searchShellRef} className="list-search-bar" onSubmit={handleSearchSubmit}>
+      <form ref={searchShellRef} className="list-search-bar list-search-bar-showcase" onSubmit={handleSearchSubmit}>
+        <div className="list-search-ambient" aria-hidden="true">
+          <span className="list-search-accent list-search-accent-warm" />
+          <span className="list-search-accent list-search-accent-cool" />
+        </div>
         <label
           ref={keywordRef}
           className={`list-search-field list-search-field-button${activePanel === "keyword" ? " is-active" : ""}`}
@@ -247,7 +260,7 @@ export default function LodgingListPage() {
           <input
             className="search-input"
             value={searchForm.keyword}
-            placeholder="여행지를 입력해 보세요"
+            placeholder="여행지를 입력하세요"
             onFocus={() => setActivePanel("keyword")}
             onChange={(event) => {
               setSearchForm((current) => ({ ...current, keyword: event.target.value }));
@@ -335,19 +348,26 @@ export default function LodgingListPage() {
       />
 
       <div className="list-results-head" aria-live="polite">
-        <strong>선택 숙소: {selectedLodging?.name ?? "불러오는 중"}</strong>
+        <strong>선택 숙소: {selectedLodging?.name ?? "추천 숙소 준비 중"}</strong>
         <span>
           {selectedLodging
             ? `${selectedLodging.region} · ${selectedLodging.district} · ${selectedLodging.price}`
-            : "조건에 맞는 숙소를 불러오고 있어요."}
+            : "조건에 맞는 숙소를 정리하고 있어요."}
         </span>
       </div>
 
       {!lodgings.length ? (
         <section className="lodging-results">
-          <div className="list-empty-state list-empty-state-full">
-            <strong>숙소 목록을 불러오는 중입니다.</strong>
-            <p>백엔드에서 숙소 데이터를 가져오고 있어요.</p>
+          <div className="lodging-results-skeleton" aria-hidden="true">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="lodging-skeleton-card">
+                <div className="lodging-skeleton-visual" />
+                <div className="lodging-skeleton-line lodging-skeleton-line-title" />
+                <div className="lodging-skeleton-line" />
+                <div className="lodging-skeleton-line lodging-skeleton-line-short" />
+                <div className="lodging-skeleton-price" />
+              </div>
+            ))}
           </div>
         </section>
       ) : (

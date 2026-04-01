@@ -1,21 +1,46 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { membershipMilestones, myBookingRows, myProfileSummary } from "../../data/mypageData";
-import { clearAuthSession, readAuthSession } from "../../features/auth/authSession";
-import { getHeaderRoleLinks, getMembershipLabel } from "../../features/auth/authViewModels";
-import { getMyCoupons } from "../../services/mypageService";
+import { readAuthSession } from "../../features/auth/authSession";
+import { getHeaderRoleLinks, getMembershipLabel, logoutCurrentSession } from "../../features/auth/authViewModels";
+import { getMyHome } from "../../services/mypageService";
 
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const [session, setSession] = useState(() => readAuthSession());
   const [menuOpen, setMenuOpen] = useState(false);
+  const [homeSnapshot, setHomeSnapshot] = useState(null);
   const menuRef = useRef(null);
 
   useEffect(() => {
     setSession(readAuthSession());
     setMenuOpen(false);
   }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (session?.role !== "ROLE_USER") {
+      setHomeSnapshot(null);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    async function loadHomeSnapshot() {
+      try {
+        const response = await getMyHome();
+        if (cancelled) return;
+        setHomeSnapshot(response);
+      } catch (error) {
+        console.error("Failed to load header mypage snapshot.", error);
+      }
+    }
+
+    loadHomeSnapshot();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, location.search, session?.role]);
 
   useEffect(() => {
     if (!menuOpen) return undefined;
@@ -28,9 +53,9 @@ export default function Header() {
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [menuOpen]);
 
-  const handleLogout = () => {
-    clearAuthSession();
-    setSession(null);
+  const handleLogout = async () => {
+    await logoutCurrentSession();
+    setSession(readAuthSession());
     setMenuOpen(false);
     navigate("/");
   };
@@ -38,15 +63,29 @@ export default function Header() {
   const handleMembershipClick = (event) => {
     event.stopPropagation();
     setMenuOpen(false);
+    if (session?.role === "ROLE_ADMIN") {
+      navigate("/admin");
+      return;
+    }
+    if (session?.role === "ROLE_HOST") {
+      navigate("/seller");
+      return;
+    }
     navigate("/my/membership");
   };
 
-  const membershipLabel = session?.role === "ROLE_USER" ? myProfileSummary.grade : getMembershipLabel(session);
-  const profileLabel = session?.name ?? myProfileSummary.name;
+  const membershipLabel = session?.role === "ROLE_USER" ? homeSnapshot?.profileSummary?.grade ?? "회원" : getMembershipLabel(session);
+  const profileLabel = session?.name ?? homeSnapshot?.profileSummary?.name ?? "TripZone 회원";
+  const profileMetaLabel =
+    session?.role === "ROLE_ADMIN"
+      ? "관리자 대시보드"
+      : session?.role === "ROLE_HOST"
+        ? "판매자 대시보드"
+        : `${membershipLabel} 회원`;
   const roleLinks = getHeaderRoleLinks(session);
-  const availableCouponCount = session?.role === "ROLE_USER" ? getMyCoupons().filter((item) => item.status === "사용 가능").length : 0;
-  const upcomingBookingCount = session?.role === "ROLE_USER" ? myBookingRows.filter((item) => item.status !== "COMPLETED").length : 0;
-  const mileageValue = membershipMilestones.find((item) => item.label === "누적 마일리지")?.value ?? "0P";
+  const availableCouponCount = session?.role === "ROLE_USER" ? homeSnapshot?.overview?.availableCouponCount ?? 0 : 0;
+  const upcomingBookingCount = session?.role === "ROLE_USER" ? homeSnapshot?.overview?.upcomingBookingCount ?? 0 : 0;
+  const mileageValue = homeSnapshot?.profileSummary?.mileage ?? "0P";
 
   return (
     <header className="header">
@@ -83,7 +122,7 @@ export default function Header() {
                       }
                     }}
                   >
-                    {membershipLabel} 회원
+                    {profileMetaLabel}
                   </span>
                 </span>
                 <span className="header-profile-toggle" aria-hidden="true">☰</span>

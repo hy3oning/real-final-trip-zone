@@ -1,5 +1,4 @@
 import { Link, NavLink } from "react-router-dom";
-import { myProfileSummary } from "../../data/mypageData";
 import { readAuthSession } from "../../features/auth/authSession";
 
 const ITEMS = [
@@ -15,7 +14,8 @@ const ITEMS = [
 
 export default function MyPageSidebar() {
   const session = readAuthSession();
-  const profileName = session?.name ?? myProfileSummary.name;
+  const profileName = session?.name ?? "TripZone 회원";
+  const gradeLabel = session?.role === "ROLE_USER" ? "회원" : "사용자";
 
   return (
     <aside className="my-sidebar">
@@ -26,7 +26,7 @@ export default function MyPageSidebar() {
         </div>
         <div className="my-sidebar-copy">
           <strong>{profileName}</strong>
-          <p>{myProfileSummary.grade} 회원</p>
+          <p>{gradeLabel}</p>
         </div>
       </Link>
       <nav className="my-sidebar-nav" aria-label="마이페이지 메뉴">

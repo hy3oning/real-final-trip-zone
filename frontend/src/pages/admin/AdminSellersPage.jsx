@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import DataTable from "../../components/common/DataTable";
 import { getAdminSellers, updateAdminSellerStatus } from "../../services/dashboardService";
@@ -11,14 +11,49 @@ const columns = [
 ];
 
 export default function AdminSellersPage() {
-  const [rows, setRows] = useState(() => getAdminSellers());
-  const [selectedBusiness, setSelectedBusiness] = useState(rows[0]?.business ?? null);
-  const selectedSeller = rows.find((row) => row.business === selectedBusiness) ?? rows[0];
+  const [rows, setRows] = useState([]);
+  const [selectedSellerId, setSelectedSellerId] = useState(null);
+  const [notice, setNotice] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const selectedSeller = rows.find((row) => row.id === selectedSellerId) ?? rows[0];
 
-  const updateStatus = (nextStatus) => {
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRows() {
+      try {
+        setIsLoading(true);
+        const nextRows = await getAdminSellers();
+        if (cancelled) return;
+        setRows(nextRows);
+        setSelectedSellerId(nextRows[0]?.id ?? null);
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Failed to load admin sellers.", error);
+        setNotice("판매자 목록을 불러오지 못했습니다.");
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadRows();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const updateStatus = async (nextStatus) => {
     if (!selectedSeller) return;
-    const nextRows = updateAdminSellerStatus(selectedSeller.business, nextStatus);
-    setRows(nextRows);
+    try {
+      const nextRows = await updateAdminSellerStatus(selectedSeller.id, nextStatus);
+      setRows(nextRows);
+      setNotice("판매자 상태를 변경했습니다.");
+    } catch (error) {
+      setNotice(error.message);
+    }
   };
 
   return (
@@ -28,17 +63,19 @@ export default function AdminSellersPage() {
           <p className="eyebrow">판매자 운영</p>
           <h1>판매자 관리</h1>
           <p>대기 {rows.filter((r) => r.status === "PENDING").length} · 승인 {rows.filter((r) => r.status === "APPROVED").length} · 중지 {rows.filter((r) => r.status === "SUSPENDED").length}</p>
+          {notice ? <p>{notice}</p> : null}
         </div>
       </div>
 
       <div className="dash-table-split">
         <section className="dash-content-section" style={{ marginBottom: 0 }}>
+          {isLoading ? <div className="my-empty-inline">판매자 목록을 불러오는 중입니다.</div> : null}
           <DataTable
             columns={columns}
             rows={rows}
-            getRowKey={(row) => row.business}
-            selectedKey={selectedBusiness}
-            onRowClick={(row) => setSelectedBusiness(row.business)}
+            getRowKey={(row) => row.id}
+            selectedKey={selectedSellerId}
+            onRowClick={(row) => setSelectedSellerId(row.id)}
           />
         </section>
 
@@ -46,9 +83,10 @@ export default function AdminSellersPage() {
           <h3>{selectedSeller?.business ?? "—"}</h3>
           <p>{selectedSeller?.owner} · {selectedSeller?.region}</p>
           <div className="dash-action-grid">
-            <button type="button" className="dash-action-btn is-primary" onClick={() => updateStatus("APPROVED")}>승인</button>
-            <button type="button" className="dash-action-btn is-danger" onClick={() => updateStatus("REJECTED")}>반려</button>
-            <button type="button" className="dash-action-btn is-danger" onClick={() => updateStatus("SUSPENDED")}>중지</button>
+            <button type="button" className="dash-action-btn is-primary" onClick={() => updateStatus("ACTIVE")} disabled={!selectedSeller}>복구</button>
+            <button type="button" className="dash-action-btn is-primary" onClick={() => updateStatus("APPROVED")} disabled={!selectedSeller}>승인</button>
+            <button type="button" className="dash-action-btn is-danger" onClick={() => updateStatus("REJECTED")} disabled={!selectedSeller}>반려</button>
+            <button type="button" className="dash-action-btn is-danger" onClick={() => updateStatus("SUSPENDED")} disabled={!selectedSeller}>중지</button>
           </div>
         </div>
       </div>

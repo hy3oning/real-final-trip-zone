@@ -1,226 +1,636 @@
-import { getAppDataSource } from "../lib/appClient";
-import { readCollection, updateCollectionRow, writeCollection } from "../lib/mockDb";
-import {
-  adminInquiryRows,
-  adminTasks,
-  auditLogRows,
-  reservationRows,
-  sellerLodgings,
-  sellerMetrics,
-  sellerRows,
-  sellerTasks,
-  userRows,
-} from "../data/dashboardData";
-import {
-  adminEventRows,
-  adminReviewRows,
-  sellerApplicationStatus,
-  sellerApplicationSteps,
-  sellerImageRows,
-  sellerRoomRows,
-} from "../data/opsData";
-import { inquiryMessages, inquiryRooms } from "../data/mypageData";
+import { readAuthSession } from "../features/auth/authSession";
+import { get, patch, post, put } from "../lib/appClient";
+import { getSellerInquiryRooms } from "./sellerInquiryService";
 
-const COLLECTION_KEYS = {
-  adminUsers: "tripzone-admin-users",
-  adminSellers: "tripzone-admin-sellers",
-  adminEvents: "tripzone-admin-events",
-  adminInquiries: "tripzone-admin-inquiries",
-  adminReviews: "tripzone-admin-reviews",
-  sellerLodgings: "tripzone-seller-lodgings",
-  sellerReservations: "tripzone-seller-reservations",
-  sellerRooms: "tripzone-seller-rooms",
-  sellerAssets: "tripzone-seller-assets",
-  sellerApplication: "tripzone-seller-application",
-};
+function formatDateLabel(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function formatDateTimeLabel(value) {
+  if (!value) return "아직 제출 전";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatMoney(value) {
+  const numeric = Number(value ?? 0);
+  if (!Number.isFinite(numeric) || numeric <= 0) return "-";
+  return `${numeric.toLocaleString()}원`;
+}
+
+function formatDateRange(startDate, endDate) {
+  if (!startDate || !endDate) return "-";
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "-";
+  return `${String(start.getMonth() + 1).padStart(2, "0")}.${String(start.getDate()).padStart(2, "0")} - ${String(end.getMonth() + 1).padStart(2, "0")}.${String(end.getDate()).padStart(2, "0")}`;
+}
+
+function extractRows(response) {
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  return response?.dtoList ?? [];
+}
+
+function mapEnabledStatus(enabled) {
+  return enabled === "1" || enabled === "true" || enabled === true ? "ACTIVE" : "BLOCKED";
+}
+
+function mapInquiryStatus(status) {
+  if (status === "COMPLETED") return "ANSWERED";
+  if (status === "DELETE") return "CLOSED";
+  return "OPEN";
+}
+
+function mapAdminUserDto(dto) {
+  return {
+    id: dto.userNo,
+    name: dto.userName ?? `회원 ${dto.userNo}`,
+    role: "ROLE_USER",
+    status: mapEnabledStatus(dto.enabled),
+    email: dto.email ?? "-",
+    phone: dto.phone ?? "-",
+    grade: dto.gradeName ?? "-",
+  };
+}
+
+function mapHostProfileDto(dto) {
+  return {
+    id: dto.hostNo,
+    hostNo: dto.hostNo,
+    userNo: dto.userNo,
+    business: dto.businessName ?? `호스트 ${dto.hostNo}`,
+    owner: dto.ownerName ?? "-",
+    status: dto.enabled === "0" ? "SUSPENDED" : dto.approvalStatus ?? "PENDING",
+    region: "-",
+    businessNo: dto.businessNumber ?? "-",
+    rejectReason: dto.rejectReason ?? "",
+  };
+}
+
+function mapEventDto(dto) {
+  const status = dto.status ?? "DRAFT";
+
+  return {
+    id: `event-${dto.eventNo}`,
+    entityType: "EVENT",
+    entityNo: dto.eventNo,
+    title: dto.title ?? `이벤트 ${dto.eventNo}`,
+    status,
+    statusLabel:
+      status === "ONGOING" ? "노출중" :
+      status === "HIDDEN" ? "숨김" :
+      status === "ENDED" ? "종료" : "초안",
+    target: dto.couponNames?.length ? dto.couponNames.join(", ") : "전체 회원",
+    period: formatDateRange(dto.startDate, dto.endDate),
+    content: dto.content ?? "",
+    startDate: dto.startDate ?? "",
+    endDate: dto.endDate ?? "",
+  };
+}
+
+function mapCouponDto(dto) {
+  const status = dto.status ?? "INACTIVE";
+  const discountLabel =
+    dto.discountType === "RATE"
+      ? `${Number(dto.discountValue ?? 0)}% 쿠폰`
+      : `${Number(dto.discountValue ?? 0).toLocaleString()}원 쿠폰`;
+
+  return {
+    id: `coupon-${dto.couponNo}`,
+    entityType: "COUPON",
+    entityNo: dto.couponNo,
+    title: dto.couponName ?? `쿠폰 ${dto.couponNo}`,
+    status,
+    statusLabel:
+      status === "ACTIVE" ? "노출중" :
+      status === "EXPIRED" || status === "USED" ? "종료" : "숨김",
+    target: discountLabel,
+    period: formatDateRange(dto.startDate, dto.endDate),
+    content: "",
+    startDate: dto.startDate ?? "",
+    endDate: dto.endDate ?? "",
+    discountType: dto.discountType ?? "AMOUNT",
+    discountValue: dto.discountValue ?? 0,
+    adminUser: dto.adminUser ?? 1,
+  };
+}
+
+function mapInquiryDto(dto, comments = []) {
+  return {
+    id: dto.inquiryNo,
+    title: dto.title ?? `문의 ${dto.inquiryNo}`,
+    type: dto.inquiryType ?? "SYSTEM",
+    status: mapInquiryStatus(dto.status),
+    date: formatDateLabel(dto.regDate),
+    owner: `회원 ${dto.userNo ?? "-"}`,
+    summary: dto.content ?? "",
+    messages: [
+      {
+        id: `inquiry-${dto.inquiryNo}`,
+        sender: "회원",
+        time: formatDateLabel(dto.regDate),
+        body: dto.content ?? "",
+      },
+      ...comments.map((comment) => ({
+        id: `comment-${comment.commentNo}`,
+        sender: "운영팀",
+        time: "답변 도착",
+        body: comment.content ?? "",
+      })),
+    ],
+  };
+}
+
+function mapReservationDto(dto) {
+  return {
+    id: dto.bookingNo,
+    no: dto.bookingNo,
+    guest: dto.userNo ? `회원 ${dto.userNo}` : "-",
+    stay: `${formatDateLabel(dto.checkInDate)} - ${formatDateLabel(dto.checkOutDate)}`,
+    status: dto.status ?? "PENDING",
+    amount: formatMoney(dto.totalPrice),
+    detail: `${dto.lodgingName ?? "숙소 확인"} · ${dto.roomName ?? "객실 확인"}`,
+  };
+}
+
+function mapSellerLodgingDto(dto) {
+  const roomCount = dto.rooms?.reduce((sum, room) => sum + Number(room.roomCount ?? 0), 0) ?? 0;
+
+  return {
+    id: dto.lodgingNo,
+    name: dto.lodgingName ?? `숙소 ${dto.lodgingNo}`,
+    type: dto.lodgingType ?? "-",
+    region: dto.region ?? "-",
+    status: dto.status ?? "INACTIVE",
+    roomCount,
+    occupancy: "-",
+    inquiryCount: 0,
+    uploadFileNames: dto.uploadFileNames ?? [],
+    rooms: dto.rooms ?? [],
+  };
+}
+
+function mapSellerRoomDto(room, lodgingName) {
+  return {
+    id: room.roomNo,
+    name: room.roomName ?? `객실 ${room.roomNo}`,
+    type: room.roomType ?? "-",
+    lodging: lodgingName,
+    status: room.status ?? "UNAVAILABLE",
+    capacity: room.maxGuestCount ? `${room.maxGuestCount}인` : "-",
+    price: formatMoney(room.pricePerNight),
+  };
+}
+
+function mapSellerAssetRows(lodging) {
+  const images = lodging.uploadFileNames?.length ? lodging.uploadFileNames : [];
+  if (!images.length) {
+    return [
+      {
+        id: `${lodging.id}-placeholder`,
+        lodgingId: lodging.id,
+        lodging: lodging.name,
+        type: "대표 이미지",
+        order: "1",
+        status: "미등록",
+        fileName: null,
+      },
+    ];
+  }
+
+  return images.map((fileName, index) => ({
+    id: `${lodging.id}-${index + 1}-${fileName}`,
+    lodgingId: lodging.id,
+    lodging: lodging.name,
+    type: index === 0 ? "대표 이미지" : "일반 이미지",
+    order: String(index + 1),
+    status: index === 0 ? "대표 노출" : "일반 노출",
+    fileName,
+  }));
+}
+
+async function getCurrentHostProfile() {
+  const session = readAuthSession();
+  if (!session?.userNo) return null;
+
+  try {
+    return await get("/api/mypage/host-profile");
+  } catch (error) {
+    if (error.message?.includes("HTTP 403")) {
+      return null;
+    }
+
+    if (error.message?.includes("호스트 신청 정보가 없습니다.")) {
+      return null;
+    }
+
+    if (error.message?.includes("HTTP 404")) {
+      try {
+        const response = await get("/api/hosts?page=1&size=100");
+        const hostRows = extractRows(response);
+        return hostRows.find((item) => Number(item.userNo) === Number(session.userNo)) ?? null;
+      } catch {
+        return null;
+      }
+    }
+    throw error;
+  }
+}
+
+async function requireCurrentHostProfile() {
+  const host = await getCurrentHostProfile();
+  if (!host) {
+    throw new Error("판매자 프로필을 찾을 수 없습니다.");
+  }
+  return host;
+}
 
 export function getDashboardDataSource() {
-  return getAppDataSource();
+  return "http";
 }
 
 export function getAdminTasks() {
-  return adminTasks;
+  return [];
 }
 
 export function getSellerTasks() {
-  return sellerTasks;
+  return [];
 }
 
-export function getAdminUsers() {
-  return readCollection(COLLECTION_KEYS.adminUsers, userRows);
+export async function getAdminUsers() {
+  const response = await get("/api/admin/admin/userlist?page=1&size=100");
+  return extractRows(response).map(mapAdminUserDto);
 }
 
-export function updateAdminUserStatus(email, nextStatus) {
-  return updateCollectionRow(COLLECTION_KEYS.adminUsers, userRows, (row) => row.email === email, { status: nextStatus });
+export async function updateAdminUserStatus(userNo, nextStatus) {
+  const response = await patch(`/api/admin/users/${userNo}/status`, {
+    status: nextStatus,
+  });
+  return mapAdminUserDto(response);
 }
 
-export function getAdminSellers() {
-  return readCollection(COLLECTION_KEYS.adminSellers, sellerRows);
+export async function getAdminSellers() {
+  const response = await get("/api/hosts?page=1&size=100");
+  return extractRows(response).map(mapHostProfileDto);
 }
 
-export function updateAdminSellerStatus(business, nextStatus) {
-  return updateCollectionRow(
-    COLLECTION_KEYS.adminSellers,
-    sellerRows,
-    (row) => row.business === business,
-    { status: nextStatus },
+export async function updateAdminSellerStatus(hostNo, nextStatus) {
+  if (nextStatus === "APPROVED") {
+    await patch(`/api/admin/${hostNo}/approve`, {});
+  } else if (nextStatus === "REJECTED") {
+    await patch(`/api/admin/${hostNo}/reject`, { rejectReason: "관리자 반려 처리" });
+  } else if (nextStatus === "SUSPENDED") {
+    await put(`/api/hosts/${hostNo}/delete`, {});
+  } else if (nextStatus === "ACTIVE") {
+    await put(`/api/hosts/${hostNo}/restore`, {});
+  } else {
+    throw new Error("지원하지 않는 판매자 상태입니다.");
+  }
+
+  return getAdminSellers();
+}
+
+export async function getAdminEvents() {
+  const [eventResponse, couponRows] = await Promise.all([
+    get("/api/event/list?page=1&size=100"),
+    get("/api/coupon/list").catch(() => []),
+  ]);
+
+  return [
+    ...extractRows(eventResponse).map(mapEventDto),
+    ...couponRows.map(mapCouponDto),
+  ];
+}
+
+export async function updateAdminEventStatus(currentEvent, nextStatus) {
+  if (currentEvent.entityType === "COUPON") {
+    await patch(`/api/coupon/${currentEvent.entityNo}`, {
+      adminUser: currentEvent.adminUser,
+      couponName: currentEvent.title,
+      discountType: currentEvent.discountType,
+      discountValue: currentEvent.discountValue,
+      startDate: currentEvent.startDate,
+      endDate: currentEvent.endDate,
+      status: nextStatus === "ONGOING" ? "ACTIVE" : "INACTIVE",
+    });
+
+    const refreshed = await get("/api/coupon/list");
+    return refreshed.map(mapCouponDto).find((item) => item.id === currentEvent.id) ?? null;
+  }
+
+  const formData = new FormData();
+  formData.append("title", currentEvent.title);
+  formData.append("content", currentEvent.content ?? "");
+  formData.append("startDate", currentEvent.startDate);
+  formData.append("endDate", currentEvent.endDate);
+  formData.append("status", nextStatus);
+
+  await put(`/api/event/${currentEvent.entityNo}`, formData);
+  const refreshed = await get(`/api/event/${currentEvent.entityNo}`);
+  return mapEventDto(refreshed);
+}
+
+export async function saveAdminEvent(eventId, draft, currentEvent) {
+  if (currentEvent.entityType === "COUPON") {
+    await patch(`/api/coupon/${currentEvent.entityNo}`, {
+      adminUser: currentEvent.adminUser,
+      couponName: draft.title,
+      discountType: currentEvent.discountType,
+      discountValue: currentEvent.discountValue,
+      startDate: draft.startDate,
+      endDate: draft.endDate,
+      status: currentEvent.status ?? "INACTIVE",
+    });
+
+    const refreshed = await get("/api/coupon/list");
+    return refreshed.map(mapCouponDto).find((item) => item.id === currentEvent.id) ?? null;
+  }
+
+  const formData = new FormData();
+  formData.append("title", draft.title);
+  formData.append("content", draft.content ?? currentEvent.content ?? "");
+  formData.append("startDate", draft.startDate);
+  formData.append("endDate", draft.endDate);
+  formData.append("status", currentEvent.status ?? "DRAFT");
+
+  await put(`/api/event/${currentEvent.entityNo}`, formData);
+  const refreshed = await get(`/api/event/${currentEvent.entityNo}`);
+  return mapEventDto(refreshed);
+}
+
+export async function getAdminInquiries() {
+  const [inquiryResponse, commentResponse] = await Promise.all([
+    get("/api/inquiry/list?page=1&size=100"),
+    get("/api/comment/list?page=1&size=200").catch(() => ({ dtoList: [] })),
+  ]);
+  const comments = commentResponse.dtoList ?? [];
+  return (inquiryResponse.dtoList ?? []).map((dto) =>
+    mapInquiryDto(
+      dto,
+      comments.filter((comment) => Number(comment.inquiryNo) === Number(dto.inquiryNo)),
+    ),
   );
 }
 
-export function getAdminEvents() {
-  return readCollection(COLLECTION_KEYS.adminEvents, adminEventRows);
+export async function updateAdminInquiryStatus(inquiryNo, nextStatus) {
+  const response = await patch(`/api/admin/inquiries/${inquiryNo}/status`, {
+    status: nextStatus,
+  });
+  return mapInquiryDto(response);
 }
 
-export function updateAdminEventStatus(title, nextStatus) {
-  return updateCollectionRow(
-    COLLECTION_KEYS.adminEvents,
-    adminEventRows,
-    (row) => row.title === title,
-    { status: nextStatus },
-  );
+export async function getAdminReviews() {
+  const rows = await get("/api/reviews/admin");
+  return rows.map((review) => ({
+    id: review.reviewNo,
+    lodging: review.lodgingName ?? `숙소 ${review.lodgingNo}`,
+    author: review.userName ?? `회원 ${review.userNo ?? "-"}`,
+    score: Number(review.rating ?? 0).toFixed(1),
+    status: review.status ?? "VISIBLE",
+    report: "0건",
+    summary: review.content ?? "",
+  }));
 }
 
-export function saveAdminEvent(title, draft) {
-  return updateCollectionRow(COLLECTION_KEYS.adminEvents, adminEventRows, (row) => row.title === title, draft);
-}
-
-export function getAdminInquiries() {
-  return readCollection(COLLECTION_KEYS.adminInquiries, adminInquiryRows);
-}
-
-export function updateAdminInquiryStatus(title, nextStatus) {
-  return updateCollectionRow(
-    COLLECTION_KEYS.adminInquiries,
-    adminInquiryRows,
-    (row) => row.title === title,
-    { status: nextStatus },
-  );
-}
-
-export function getAdminReviews() {
-  return readCollection(COLLECTION_KEYS.adminReviews, adminReviewRows);
-}
-
-export function updateAdminReviewStatus(reviewKey, nextStatus) {
-  return updateCollectionRow(
-    COLLECTION_KEYS.adminReviews,
-    adminReviewRows,
-    (row) => `${row.lodging}-${row.author}` === reviewKey,
-    { status: nextStatus },
-  );
+export async function updateAdminReviewStatus(reviewNo, nextStatus) {
+  const response = await patch(`/api/reviews/${reviewNo}/visibility`, {
+    status: nextStatus,
+  });
+  return {
+    id: response.reviewNo,
+    lodging: response.lodgingName ?? `숙소 ${response.lodgingNo}`,
+    author: response.userName ?? `회원 ${response.userNo ?? "-"}`,
+    score: Number(response.rating ?? 0).toFixed(1),
+    status: response.status ?? nextStatus,
+    report: "0건",
+    summary: response.content ?? "",
+  };
 }
 
 export function getAdminAuditLogs() {
-  return auditLogRows;
+  return [];
 }
 
-export function getSellerLodgings() {
-  return readCollection(COLLECTION_KEYS.sellerLodgings, sellerLodgings);
+export async function getSellerLodgings() {
+  const host = await requireCurrentHostProfile();
+
+  const lodgings = await get("/api/lodgings/list");
+  return lodgings
+    .filter((item) => Number(item.hostNo) === Number(host.hostNo))
+    .map(mapSellerLodgingDto);
 }
 
-export function updateSellerLodgingStatus(id, nextStatus) {
-  return updateCollectionRow(COLLECTION_KEYS.sellerLodgings, sellerLodgings, (row) => row.id === id, { status: nextStatus });
+export async function updateSellerLodgingStatus(lodgingId, nextStatus) {
+  const formData = new FormData();
+  formData.append("status", nextStatus);
+  const response = await patch(`/api/lodgings/${lodgingId}`, formData);
+  return mapSellerLodgingDto(response);
 }
 
-export function getSellerReservations() {
-  return readCollection(COLLECTION_KEYS.sellerReservations, reservationRows);
+export async function getSellerReservations() {
+  const host = await requireCurrentHostProfile();
+
+  const response = await get(`/api/seller/hostlist/${host.hostNo}?page=1&size=100`);
+  return (response.dtoList ?? []).map(mapReservationDto);
 }
 
-export function updateSellerReservationStatus(no, nextStatus) {
-  return updateCollectionRow(
-    COLLECTION_KEYS.sellerReservations,
-    reservationRows,
-    (row) => row.no === no,
-    { status: nextStatus },
+export async function updateSellerReservationStatus(bookingNo, nextStatus) {
+  const response = await patch(`/api/seller/bookings/${bookingNo}/status`, {
+    status: nextStatus,
+  });
+  return mapReservationDto(response);
+}
+
+export async function getSellerRooms() {
+  const lodgings = await getSellerLodgings();
+  return lodgings.flatMap((lodging) =>
+    (lodging.rooms ?? []).map((room) => mapSellerRoomDto(room, lodging.name)),
   );
 }
 
-export function getSellerRooms() {
-  return readCollection(COLLECTION_KEYS.sellerRooms, sellerRoomRows);
+export async function updateSellerRoomStatus(roomId, nextStatus, lodgingName) {
+  const response = await patch(`/api/rooms/${roomId}`, {
+    status: nextStatus,
+  });
+  return mapSellerRoomDto(response, lodgingName);
 }
 
-export function updateSellerRoomStatus(rowKey, nextStatus) {
-  return updateCollectionRow(
-    COLLECTION_KEYS.sellerRooms,
-    sellerRoomRows,
-    (row) => `${row.lodging}-${row.name}` === rowKey,
-    { status: nextStatus },
+export async function getSellerAssets() {
+  const lodgings = await getSellerLodgings();
+  const detailedLodgings = await Promise.all(
+    lodgings.map(async (lodging) => {
+      const detail = await get(`/api/lodgings/${lodging.id}`);
+      return {
+        ...lodging,
+        uploadFileNames: detail.uploadFileNames ?? lodging.uploadFileNames ?? [],
+      };
+    }),
   );
+
+  return detailedLodgings.flatMap(mapSellerAssetRows);
 }
 
-export function getSellerAssets() {
-  return readCollection(COLLECTION_KEYS.sellerAssets, sellerImageRows);
-}
+export async function updateSellerAsset(assetId, patchData) {
+  const currentAssets = await getSellerAssets();
+  const target = currentAssets.find((item) => item.id === assetId);
 
-export function updateSellerAsset(rowKey, patch) {
-  return updateCollectionRow(
-    COLLECTION_KEYS.sellerAssets,
-    sellerImageRows,
-    (row) => `${row.lodging}-${row.type}` === rowKey,
-    patch,
-  );
+  if (!target?.fileName) {
+    throw new Error("조정할 이미지가 없습니다.");
+  }
+
+  const lodging = await get(`/api/lodgings/${target.lodgingId}`);
+  const uploadFileNames = [...(lodging.uploadFileNames ?? [])];
+  const currentIndex = uploadFileNames.indexOf(target.fileName);
+
+  if (currentIndex < 0) {
+    throw new Error("이미지 파일 정보를 찾을 수 없습니다.");
+  }
+
+  uploadFileNames.splice(currentIndex, 1);
+
+  if (patchData.mode === "PRIMARY") {
+    uploadFileNames.unshift(target.fileName);
+  } else if (patchData.mode === "LAST") {
+    uploadFileNames.push(target.fileName);
+  } else {
+    throw new Error("지원하지 않는 이미지 작업입니다.");
+  }
+
+  await patch(`/api/lodgings/${target.lodgingId}`, (() => {
+    const formData = new FormData();
+    uploadFileNames.forEach((fileName) => formData.append("uploadFileNames", fileName));
+    return formData;
+  })());
+
+  const refreshedAssets = await getSellerAssets();
+  return refreshedAssets.find((item) => item.fileName === target.fileName && item.lodgingId === target.lodgingId) ?? null;
 }
 
 export function getSellerApplicationTemplate() {
-  return sellerApplicationStatus;
+  return [
+    { label: "현재 상태", value: "READY", display: "신청 전", tone: "sand" },
+    { label: "서류 접수", value: "READY", display: "신청서 제출 가능", tone: "mint" },
+    { label: "정산 계좌", value: "INFO", display: "승인 후 별도 관리", tone: "blue" },
+  ];
 }
 
 export function getSellerApplicationSteps() {
-  return sellerApplicationSteps;
+  return [
+    "사업자 정보 등록",
+    "대표 숙소 기본 정보 입력",
+    "운영 정책과 취소 규정 확인",
+    "승인 결과는 판매자센터에서 확인",
+  ];
 }
 
-export function getSellerApplicationDraft() {
-  return (
-    readCollection(COLLECTION_KEYS.sellerApplication, [
-      {
-        status: "PENDING",
-        businessNo: "",
-        businessName: "",
-        owner: "",
-        account: "",
-        submittedAt: null,
-      },
-    ])[0] ?? null
+export async function getSellerApplicationDraft() {
+  const host = await getCurrentHostProfile();
+  const submittedAtSource = host?.updDate ?? host?.regDate ?? null;
+  return {
+    status: host?.approvalStatus ?? "READY",
+    businessNo: host?.businessNumber ?? "",
+    businessName: host?.businessName ?? "",
+    owner: host?.ownerName ?? "",
+    account: "",
+    submittedAt: submittedAtSource ? formatDateTimeLabel(submittedAtSource) : null,
+  };
+}
+
+export async function submitSellerApplication(form) {
+  const session = readAuthSession();
+  if (!session?.userNo) {
+    throw new Error("로그인 정보가 없습니다.");
+  }
+
+  const payload = {
+    userNo: session.userNo,
+    businessNumber: form.businessNo.trim(),
+    businessName: form.businessName.trim(),
+    ownerName: form.owner.trim(),
+    account: form.account.trim(),
+  };
+
+  const host = await getCurrentHostProfile();
+
+  if (!host) {
+    await post("/api/hosts/register", payload);
+  } else if (host.approvalStatus === "REJECTED") {
+    await patch(`/api/hosts/${host.hostNo}`, payload);
+  } else if (host.approvalStatus === "PENDING") {
+    throw new Error("이미 승인 대기 중인 신청서가 있습니다.");
+  } else if (host.approvalStatus === "APPROVED") {
+    throw new Error("이미 승인된 호스트 계정입니다.");
+  } else {
+    throw new Error("현재 상태에서는 신청서를 다시 제출할 수 없습니다.");
+  }
+
+  return getSellerApplicationDraft();
+}
+
+export async function getSellerMetrics(prefetched = {}) {
+  const lodgings = prefetched.lodgings ?? await getSellerLodgings();
+  const reservations = prefetched.reservations ?? await getSellerReservations();
+  const inquiries = prefetched.inquiries ?? await getSellerInquiryRooms();
+
+  return [
+    { label: "오늘 체크인", value: String(reservations.filter((item) => item.status === "CONFIRMED").length).padStart(2, "0") },
+    { label: "답변 대기 문의", value: String(inquiries.filter((item) => item.status === "OPEN").length).padStart(2, "0") },
+    { label: "운영 숙소", value: String(lodgings.filter((item) => item.status === "ACTIVE").length).padStart(2, "0") },
+    { label: "가동 객실", value: String(lodgings.reduce((sum, item) => sum + Number(item.roomCount ?? 0), 0)).padStart(2, "0") },
+  ];
+}
+
+export async function getAdminDashboardSnapshot() {
+  const [users, sellers, adminInquiries] = await Promise.all([
+    getAdminUsers().catch(() => []),
+    getAdminSellers().catch(() => []),
+    getAdminInquiries().catch(() => []),
+  ]);
+
+  return {
+    adminTasks: [],
+    adminInquiries,
+    auditLogs: [],
+    sellers,
+    users,
+  };
+}
+
+export async function getSellerDashboardSnapshot() {
+  const host = await requireCurrentHostProfile();
+  const lodgingsPromise = get("/api/lodgings/list").then((rows) =>
+    rows.filter((item) => Number(item.hostNo) === Number(host.hostNo)).map(mapSellerLodgingDto),
   );
-}
+  const reservationsPromise = get(`/api/seller/hostlist/${host.hostNo}?page=1&size=100`).then((response) =>
+    extractRows(response).map(mapReservationDto),
+  );
+  const inquiriesPromise = getSellerInquiryRooms().catch(() => []);
 
-export function submitSellerApplication(form) {
-  const nextRow = {
-    status: "PENDING",
-    submittedAt: new Date().toISOString(),
-    ...form,
-  };
-  writeCollection(COLLECTION_KEYS.sellerApplication, [nextRow]);
-  return nextRow;
-}
+  const [lodgings, reservations, inquiries] = await Promise.all([
+    lodgingsPromise,
+    reservationsPromise,
+    inquiriesPromise,
+  ]);
+  const metrics = await getSellerMetrics({ lodgings, reservations, inquiries });
 
-export function getSellerInquiryRooms() {
-  return inquiryRooms;
-}
-
-export function getSellerInquiryMessages(roomId) {
-  return inquiryMessages[roomId] ?? [];
-}
-
-export function getSellerMetrics() {
-  return sellerMetrics;
-}
-
-export function getAdminDashboardSnapshot() {
   return {
-    adminTasks,
-    adminInquiries: getAdminInquiries(),
-    auditLogs: getAdminAuditLogs(),
-    sellers: getAdminSellers(),
-    users: getAdminUsers(),
-  };
-}
-
-export function getSellerDashboardSnapshot() {
-  return {
-    sellerTasks,
-    metrics: getSellerMetrics(),
-    lodgings: getSellerLodgings(),
-    reservations: getSellerReservations(),
+    sellerTasks: [],
+    metrics,
+    lodgings,
+    reservations,
+    inquiries: [],
   };
 }

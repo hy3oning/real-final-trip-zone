@@ -530,7 +530,9 @@ button {
 }
 
 .auth-shell-login {
-  grid-template-columns: minmax(0, 1.02fr) minmax(420px, 500px) 240px;
+  grid-template-columns: minmax(360px, 420px) minmax(360px, 480px);
+  justify-content: center;
+  align-items: start;
 }
 
 .auth-demo-panel {
@@ -838,6 +840,22 @@ button {
   color: #1f2937;
 }
 
+.auth-provider-google-button {
+  padding: 6px;
+}
+
+.google-signin-slot {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.google-signin-slot > div,
+.google-signin-slot iframe {
+  width: 100% !important;
+  max-width: 100%;
+}
+
 .auth-result-card {
   display: grid;
   gap: 6px;
@@ -864,11 +882,10 @@ button {
 
 @media (max-width: 1200px) {
   .auth-shell-login {
-    grid-template-columns: minmax(0, 1.04fr) minmax(420px, 500px);
+    grid-template-columns: minmax(320px, 420px) minmax(320px, 480px);
   }
 
   .auth-demo-panel-side {
-    grid-column: 2;
     position: static;
   }
 }

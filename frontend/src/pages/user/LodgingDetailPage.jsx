@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import StayMap from "../../components/common/StayMap";
 import { readAuthSession } from "../../utils/authSession";
 import { ReviewSection, RoomOptionsSection, StickyBookingCard } from "../../features/lodging-detail/LodgingDetailSections";
@@ -10,26 +10,60 @@ import {
   getReviewAverage,
 } from "../../features/lodging-detail/lodgingDetailViewModel";
 import { buildGalleryImages, getRoomMeta } from "../../features/lodging-detail/lodgingDetailUtils";
-import { getLodgingDetailById, getLodgingReviews } from "../../services/lodgingService";
+import { createLodgingReview, getLodgingDetailById, getLodgingReviews, uploadLodgingReviewImages } from "../../services/lodgingService";
 import { getMyBookings } from "../../services/mypageService";
+import {
+  findMyInquiryRoomByLodgingId,
+  getSellerInquiryMessages,
+  sendGuestInquiryMessage,
+  subscribeSellerInquiryRoom,
+} from "../../services/sellerInquiryService";
 
 const sellerContactByLodging = {
-  default: {
-    name: "TripZone 호스트",
+  1: {
+    name: "오션스테이 운영팀",
+    badge: "평균 8분 내 응답",
+    status: "실시간 응답 가능",
+    messages: [],
+  },
+  2: {
+    name: "제주 포레스트 하우스",
+    badge: "평균 12분 내 응답",
+    status: "실시간 응답 가능",
+    messages: [],
+  },
+  3: {
+    name: "강릉 코스트 라운지",
     badge: "평균 10분 내 응답",
-    status: "실시간 문의 가능",
-    messages: [
-      { id: "seller-1", sender: "seller", time: "방금 전", body: "안녕하세요. 체크인 시간이나 객실 옵션이 궁금하시면 편하게 문의해 주세요." },
-    ],
+    status: "실시간 응답 가능",
+    messages: [],
+  },
+  4: {
+    name: "서울 시티 모먼트",
+    badge: "평균 6분 내 응답",
+    status: "실시간 응답 가능",
+    messages: [],
+  },
+  5: {
+    name: "여수 선셋 마리나",
+    badge: "평균 11분 내 응답",
+    status: "실시간 응답 가능",
+    messages: [],
+  },
+  6: {
+    name: "경주 헤리티지 한옥",
+    badge: "평균 9분 내 응답",
+    status: "실시간 응답 가능",
+    messages: [],
   },
 };
 
 export default function LodgingDetailPage() {
   const { lodgingId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const [lodging, setLodging] = useState(null);
-  const lodgingReviews = useMemo(() => getLodgingReviews(), []);
-  const myBookingRows = useMemo(() => getMyBookings(), []);
+  const [myBookingRows, setMyBookingRows] = useState([]);
   const roomOptions = useMemo(() => (lodging ? buildRoomOptions(lodging) : []), [lodging]);
   const propertyStory = useMemo(() => (lodging ? buildPropertyStory(lodging) : []), [lodging]);
   const galleryImages = useMemo(() => buildGalleryImages(lodging?.image ?? ""), [lodging?.image]);
@@ -40,18 +74,38 @@ export default function LodgingDetailPage() {
   const [isInquiryOpen, setIsInquiryOpen] = useState(false);
   const [chatDraft, setChatDraft] = useState("");
   const [reviewDraft, setReviewDraft] = useState({ score: 5, body: "", images: [] });
-  const [reviews, setReviews] = useState(lodgingReviews);
-  const sellerContact = sellerContactByLodging[lodging?.id] ?? sellerContactByLodging.default;
-  const [chatMessages, setChatMessages] = useState(sellerContact.messages);
+  const [reviews, setReviews] = useState([]);
+  const [isReviewLoading, setIsReviewLoading] = useState(true);
+  const [isReviewUploading, setIsReviewUploading] = useState(false);
+  const [reviewNotice, setReviewNotice] = useState("");
+  const sellerContact = sellerContactByLodging[lodging?.id] ?? sellerContactByLodging[1];
+  const [chatMessages, setChatMessages] = useState([]);
+  const [inquiryRoomId, setInquiryRoomId] = useState(null);
+  const [isInquiryLoading, setIsInquiryLoading] = useState(false);
   const reviewAverage = useMemo(() => getReviewAverage(reviews), [reviews]);
   const reviewSectionRef = useRef(null);
   const inquiryThreadRef = useRef(null);
-  const authSession = readAuthSession();
+  const inquiryUnsubscribeRef = useRef(() => {});
+  const authSession = useMemo(() => readAuthSession(), []);
   const roomBaseMeta = getRoomMeta(selectedRoom?.name ?? "");
   const canWriteReview = useMemo(
     () => canWriteLodgingReview(authSession, myBookingRows, lodging?.id ?? 0),
     [authSession, lodging?.id, myBookingRows],
   );
+
+  const getChatBubbleTone = (sender) => {
+    if (sender === "회원" || sender === "guest" || sender === "USER") return "guest";
+    return "seller";
+  };
+
+  useEffect(() => {
+    if (location.hash !== "#reviews") return;
+    const timer = window.setTimeout(() => {
+      reviewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+
+    return () => window.clearTimeout(timer);
+  }, [location.hash]);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,17 +128,58 @@ export default function LodgingDetailPage() {
   }, [lodgingId]);
 
   useEffect(() => {
-    if (location.hash !== "#reviews") return;
-    const timer = window.setTimeout(() => {
-      reviewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 80);
+    let cancelled = false;
 
-    return () => window.clearTimeout(timer);
-  }, [location.hash]);
+    async function loadReviews() {
+      try {
+        setIsReviewLoading(true);
+        const rows = await getLodgingReviews(lodgingId);
+        if (cancelled) return;
+        setReviews(rows);
+        setReviewNotice("");
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Failed to load lodging reviews.", error);
+        setReviews([]);
+        setReviewNotice("리뷰 목록을 불러오지 못했습니다.");
+      } finally {
+        if (!cancelled) {
+          setIsReviewLoading(false);
+        }
+      }
+    }
+
+    loadReviews();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lodgingId]);
 
   useEffect(() => {
-    setChatMessages(sellerContact.messages);
-  }, [sellerContact]);
+    let cancelled = false;
+
+    async function loadMyBookings() {
+      if (!authSession?.accessToken) {
+        setMyBookingRows([]);
+        return;
+      }
+
+      try {
+        const rows = await getMyBookings();
+        if (cancelled) return;
+        setMyBookingRows(rows);
+      } catch (error) {
+        console.error("Failed to load my bookings for review eligibility.", error);
+      }
+    }
+
+    loadMyBookings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authSession?.accessToken]);
 
   useEffect(() => {
     if (!roomOptions.length) return;
@@ -95,6 +190,57 @@ export default function LodgingDetailPage() {
     if (!galleryImages.length) return;
     setSelectedImage(galleryImages[0]);
   }, [galleryImages]);
+
+  useEffect(() => {
+    if (!isInquiryOpen || !lodging || !authSession) {
+      setInquiryRoomId(null);
+      setChatMessages(sellerContact.messages);
+      inquiryUnsubscribeRef.current();
+      inquiryUnsubscribeRef.current = () => {};
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadInquiryThread() {
+      setIsInquiryLoading(true);
+      inquiryUnsubscribeRef.current();
+      inquiryUnsubscribeRef.current = () => {};
+
+      try {
+        const room = await findMyInquiryRoomByLodgingId(lodging.id);
+        if (cancelled) return;
+
+        if (!room) {
+          setInquiryRoomId(null);
+          setChatMessages([]);
+          return;
+        }
+
+        setInquiryRoomId(room.id);
+        const nextMessages = await getSellerInquiryMessages(room.id);
+        if (cancelled) return;
+        setChatMessages(nextMessages);
+        inquiryUnsubscribeRef.current = await subscribeSellerInquiryRoom(room.id, (message) => {
+          setChatMessages((current) => (current.some((row) => row.id === message.id) ? current : [...current, message]));
+        });
+      } catch (error) {
+        console.error("Failed to load lodging inquiry thread.", error);
+      } finally {
+        if (!cancelled) {
+          setIsInquiryLoading(false);
+        }
+      }
+    }
+
+    loadInquiryThread();
+
+    return () => {
+      cancelled = true;
+      inquiryUnsubscribeRef.current();
+      inquiryUnsubscribeRef.current = () => {};
+    };
+  }, [authSession?.userNo, isInquiryOpen, lodging?.id, sellerContact.messages]);
 
   useEffect(() => {
     if (!isInquiryOpen) return undefined;
@@ -130,42 +276,103 @@ export default function LodgingDetailPage() {
     }
   };
 
-  const handleReviewSubmit = (event) => {
+  const handleReviewSubmit = async (event) => {
     event.preventDefault();
     const body = reviewDraft.body.trim();
     if (!body) return;
 
-    const nextReview = {
-      author: "TripZone 사용자",
-      score: reviewDraft.score.toFixed(1),
-      stay: "방금 작성",
-      body,
-      images: reviewDraft.images,
-    };
+    const completedBooking = myBookingRows.find(
+      (booking) => booking.lodgingId === lodging.id && booking.status === "COMPLETED",
+    );
+    if (!completedBooking) {
+      setReviewNotice("숙박 완료 내역이 있어야 리뷰를 등록할 수 있습니다.");
+      return;
+    }
+    if (isReviewUploading) {
+      setReviewNotice("리뷰 사진 업로드가 끝난 뒤 등록할 수 있습니다.");
+      return;
+    }
 
-    setReviews((current) => [nextReview, ...current]);
-    setReviewDraft({ score: 5, body: "", images: [] });
+    try {
+      const nextReview = await createLodgingReview({
+        bookingNo: completedBooking.bookingNo,
+        lodgingId: lodging.id,
+        score: reviewDraft.score,
+        body,
+        images: reviewDraft.images,
+      });
+
+      setReviews((current) => [nextReview, ...current]);
+      setReviewDraft({ score: 5, body: "", images: [] });
+      setReviewNotice("리뷰가 등록되었습니다.");
+    } catch (error) {
+      console.error("Failed to create lodging review.", error);
+      setReviewNotice("리뷰 등록에 실패했습니다.");
+    }
   };
 
   const handleReviewImages = (event) => {
+    const input = event.target;
     const files = Array.from(event.target.files ?? []);
     if (!files.length) return;
+    setIsReviewUploading(true);
+    setReviewNotice("리뷰 사진을 업로드하는 중입니다.");
 
-    const nextImages = files.slice(0, 3).map((file) => URL.createObjectURL(file));
-    setReviewDraft((current) => ({ ...current, images: nextImages }));
+    uploadLodgingReviewImages(files)
+      .then((imageUrls) => {
+        setReviewDraft((current) => ({ ...current, images: imageUrls }));
+        setReviewNotice(imageUrls.length ? `사진 ${imageUrls.length}장을 첨부했습니다.` : "첨부 가능한 이미지가 없습니다.");
+      })
+      .catch((error) => {
+        console.error("Failed to upload review images.", error);
+        setReviewDraft((current) => ({ ...current, images: [] }));
+        setReviewNotice("리뷰 사진 업로드에 실패했습니다.");
+      })
+      .finally(() => {
+        setIsReviewUploading(false);
+        input.value = "";
+      });
   };
 
-  const handleInquirySubmit = (event) => {
+  const handleInquirySubmit = async (event) => {
     event.preventDefault();
     const body = chatDraft.trim();
     if (!body) return;
 
-    setChatMessages((current) => [
-      ...current,
-      { id: `guest-${Date.now()}`, sender: "guest", time: "방금 전", body },
-      { id: `seller-${Date.now() + 1}`, sender: "seller", time: "응답 예정", body: "문의 감사합니다. 호스트가 확인 후 답변드릴게요." },
-    ]);
-    setChatDraft("");
+    if (!authSession?.accessToken) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      let nextRoomId = inquiryRoomId;
+
+      if (!nextRoomId) {
+        setIsInquiryLoading(true);
+        nextRoomId = await sendGuestInquiryMessage({
+          lodgingId: lodging.id,
+          roomId: null,
+          body,
+        });
+        setInquiryRoomId(nextRoomId);
+        inquiryUnsubscribeRef.current();
+        inquiryUnsubscribeRef.current = await subscribeSellerInquiryRoom(nextRoomId, (message) => {
+          setChatMessages((current) => (current.some((row) => row.id === message.id) ? current : [...current, message]));
+        });
+        setIsInquiryLoading(false);
+      } else {
+        await sendGuestInquiryMessage({
+          lodgingId: lodging.id,
+          roomId: nextRoomId,
+          body,
+        });
+      }
+
+      setChatDraft("");
+    } catch (error) {
+      setIsInquiryLoading(false);
+      console.error("Failed to send guest inquiry message.", error);
+    }
   };
 
   if (!lodging || !selectedRoom) {
@@ -221,7 +428,6 @@ export default function LodgingDetailPage() {
           </div>
         </div>
       </section>
-
       <div className="detail-gallery-strip">
         {galleryImages.map((image, index) => (
           <button
@@ -234,10 +440,9 @@ export default function LodgingDetailPage() {
           />
         ))}
       </div>
-
       <div className="detail-photo-meta">
         <strong>숙소 사진 {galleryImages.indexOf(selectedImage) + 1}</strong>
-        <span>{selectedRoom.name} 기준 이미지와 숙소 전경을 확인해 보세요.</span>
+        <span>{selectedRoom.name} 기준 객실/공용 공간 이미지를 먼저 확인하세요.</span>
       </div>
 
       <section className="detail-grid">
@@ -295,7 +500,7 @@ export default function LodgingDetailPage() {
                 </ul>
               </div>
               <div className="detail-guide-item">
-                <strong>추천 포인트</strong>
+                <strong>투숙객 혜택</strong>
                 <ul className="detail-guide-bullets">
                   {lodging.highlights.slice(0, 3).map((item) => (
                     <li key={item}>{item}</li>
@@ -307,7 +512,7 @@ export default function LodgingDetailPage() {
                 <ul className="detail-guide-bullets">
                   <li>{lodging.cancellation}</li>
                   <li>{lodging.benefit}</li>
-                  <li>예약 단계에서 객실 조건과 취소 정책을 다시 확인해 주세요.</li>
+                  <li>객실별 취소 규정과 포함 혜택을 확인하세요.</li>
                 </ul>
               </div>
             </div>
@@ -334,6 +539,8 @@ export default function LodgingDetailPage() {
               onSubmit={handleReviewSubmit}
               onImageChange={handleReviewImages}
             />
+            {isReviewLoading ? <div className="my-empty-inline">리뷰를 불러오는 중입니다.</div> : null}
+            {reviewNotice ? <div className="my-empty-inline">{reviewNotice}</div> : null}
           </section>
         </section>
 
@@ -367,8 +574,14 @@ export default function LodgingDetailPage() {
             </div>
 
             <div className="lodging-inquiry-thread" ref={inquiryThreadRef}>
+              {!chatMessages.length && !isInquiryLoading ? (
+                <article className="lodging-chat-bubble is-seller">
+                  <span className="lodging-chat-time">안내</span>
+                  <p>체크인 시간, 객실 옵션, 주차 여부처럼 예약 전에 확인할 내용을 남겨보세요.</p>
+                </article>
+              ) : null}
               {chatMessages.map((message) => (
-                <article key={message.id} className={`lodging-chat-bubble is-${message.sender}`}>
+                <article key={message.id} className={`lodging-chat-bubble is-${getChatBubbleTone(message.sender)}`}>
                   <span className="lodging-chat-time">{message.time}</span>
                   <p>{message.body}</p>
                 </article>
@@ -379,13 +592,13 @@ export default function LodgingDetailPage() {
               <textarea
                 value={chatDraft}
                 onChange={(event) => setChatDraft(event.target.value)}
-                placeholder="체크인 시간, 객실 옵션, 주차 여부처럼 예약 전에 확인하고 싶은 내용을 남겨 보세요."
+                placeholder="체크인 시간, 주차, 바비큐, 객실 배정처럼 예약 전 확인할 내용을 남겨보세요."
                 rows={3}
               />
               <div className="lodging-inquiry-form-foot">
-                <span>응답은 이 창 안에서 이어집니다.</span>
-                <button type="submit" className="primary-button">
-                  보내기
+                <span>회원 메시지는 판매자 대시보드 문의관리와 같은 흐름으로 이어집니다.</span>
+                <button type="submit" className="primary-button" disabled={isInquiryLoading}>
+                  {isInquiryLoading ? "연결 중..." : "보내기"}
                 </button>
               </div>
             </form>

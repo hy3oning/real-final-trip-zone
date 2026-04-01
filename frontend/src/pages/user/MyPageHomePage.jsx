@@ -1,45 +1,116 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import MyPageLayout from "../../components/user/MyPageLayout";
-import {
-  myBookingRows,
-  myPageSections,
-  myProfileSummary,
-  paymentHistoryRows,
-  wishlistRows,
-} from "../../data/mypageData";
-import { readAuthSession } from "../../features/auth/authSession";
-import { getMyCoupons } from "../../services/mypageService";
+import { myPageSections } from "../../data/mypageData";
+import { getMyBookings, getMyHome } from "../../services/mypageService";
+
+const EMPTY_PROFILE_SUMMARY = {
+  name: "TripZone 회원",
+  grade: "회원",
+  gradeHint: "실제 이용 등급을 불러오지 못했습니다.",
+  status: "상태 확인 중",
+  joinedAt: "가입일 확인 중",
+};
 
 export default function MyPageHomePage() {
-  const session = readAuthSession();
-  const coupons = getMyCoupons();
-  const upcomingCount = myBookingRows.filter((item) => item.status !== "COMPLETED").length;
-  const availableCouponCount = coupons.filter((item) => item.status === "사용 가능").length;
-  const paidCount = paymentHistoryRows.filter((item) => item.status === "PAID").length;
-  const nextTrip = myBookingRows.find((item) => item.status !== "COMPLETED") ?? myBookingRows[0];
-  const profileName = session?.name ?? myProfileSummary.name;
+  const [homeData, setHomeData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadMyHome() {
+      try {
+        setIsLoading(true);
+        const [response, bookingRows] = await Promise.all([getMyHome(), getMyBookings()]);
+        if (cancelled) return;
+        setHomeData({
+          ...response,
+          nextTrip:
+            bookingRows.find((item) => item.status !== "COMPLETED" && item.status !== "CANCELED") ??
+            bookingRows[0] ??
+            null,
+        });
+      } catch (error) {
+        console.error("Failed to load mypage home.", error);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadMyHome();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const profileSummary = homeData?.profileSummary ?? EMPTY_PROFILE_SUMMARY;
+  const overview = homeData?.overview;
+  const upcomingCount = overview?.upcomingBookingCount ?? 0;
+  const availableCouponCount = overview?.availableCouponCount ?? 0;
+  const paidCount = overview?.paidCount ?? 0;
   const overviewItems = [
     { label: "예약중", value: `${upcomingCount}건`, href: "/my/bookings" },
-    { label: "찜 목록", value: `${wishlistRows.length}건`, href: "/my/wishlist" },
+    { label: "찜 목록", value: `${overview?.wishlistCount ?? 0}건`, href: "/my/wishlist" },
     { label: "사용 가능 쿠폰", value: `${availableCouponCount}장`, href: "/my/coupons" },
     { label: "결제 완료", value: `${paidCount}건`, href: "/my/payments" },
   ];
+  const nextTrip = useMemo(() => {
+    const nextBooking = homeData?.nextTrip;
+    if (!nextBooking) {
+      return {
+        name: "다음 예약을 확인해 주세요",
+        stay: "예약 내역에서 실제 일정 확인",
+        roomName: "예정된 예약 없음",
+        status: "PENDING",
+        bookingStatusLabel: "일정 확인",
+        price: "-",
+        guestCount: "-",
+      };
+    }
+
+    return {
+      name: nextBooking.name ?? nextBooking.lodgingName ?? "다음 여행",
+      stay: nextBooking.stay ?? "일정 확인",
+      roomName: nextBooking.roomName ?? "객실 확인",
+      status: nextBooking.status ?? "PENDING",
+      bookingStatusLabel: nextBooking.bookingStatusLabel ?? "일정 확인",
+      price: nextBooking.price ?? "-",
+      guestCount: nextBooking.guestCount ?? "-",
+    };
+  }, [homeData?.nextTrip]);
+  const shortcutItems = useMemo(() => {
+    const menuMap = new Map((homeData?.menus ?? []).map((item) => [item.href, item]));
+    return myPageSections.map((item) => ({
+      ...item,
+      title: menuMap.get(item.href)?.title ?? item.title,
+      subtitle: menuMap.get(item.href)?.subtitle ?? item.subtitle,
+    }));
+  }, [homeData?.menus]);
 
   return (
     <MyPageLayout>
       <section className="my-list-sheet my-home-sheet">
+        {isLoading ? (
+          <div className="my-empty-panel">
+            <strong>마이페이지 요약을 불러오는 중입니다.</strong>
+            <p>회원 요약 정보와 바로가기 메뉴를 동기화하고 있습니다.</p>
+          </div>
+        ) : null}
         <section className="my-home-hero">
           <Link to="/my/membership" className="my-home-topline my-home-topline-link">
             <div className="my-home-topline-copy">
               <span className="my-home-label">MY PAGE</span>
-              <strong>{profileName}</strong>
-              <p>{myProfileSummary.gradeHint}</p>
+              <strong>{profileSummary.name}</strong>
+              <p>{profileSummary.gradeHint}</p>
             </div>
             <div className="my-home-topline-meta">
-              <span className="my-stat-pill is-mint">{myProfileSummary.status}</span>
-              <span className="my-stat-pill">{myProfileSummary.grade} 회원</span>
-              <span className="my-stat-pill is-soft">{myProfileSummary.joinedAt}</span>
+              <span className="my-stat-pill is-mint">{profileSummary.status}</span>
+              <span className="my-stat-pill">{profileSummary.grade} 회원</span>
+              <span className="my-stat-pill is-soft">{profileSummary.joinedAt}</span>
             </div>
           </Link>
 
@@ -74,7 +145,7 @@ export default function MyPageHomePage() {
             </div>
           </div>
           <div className="my-home-shortcut-grid">
-            {myPageSections.map((item) => (
+            {shortcutItems.map((item) => (
               <Link key={item.href} to={item.href} className={`my-home-shortcut-card is-${item.accent}`}>
                 <span className={`my-home-shortcut-icon is-${item.accent}`} aria-hidden="true">{item.icon}</span>
                 <div className="my-home-shortcut-copy">

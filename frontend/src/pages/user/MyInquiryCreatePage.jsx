@@ -12,15 +12,26 @@ export default function MyInquiryCreatePage() {
   const [searchParams] = useSearchParams();
   const initialType = searchParams.get("type");
   const [form, setForm] = useState(buildInquiryCreateForm(initialType));
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (key, value) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    createInquiryThread(form);
-    navigate("/my/inquiries");
+    try {
+      setIsSubmitting(true);
+      setError("");
+      await createInquiryThread(form);
+      navigate("/my/inquiries");
+    } catch (submitError) {
+      console.error("Failed to create inquiry.", submitError);
+      setError("관리자 문의 등록에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -28,13 +39,14 @@ export default function MyInquiryCreatePage() {
       <form className="inquiry-form-sheet inquiry-form-sheet-v2" onSubmit={handleSubmit}>
         <div className="mypage-header-row">
           <div className="mypage-header-copy">
-            <strong>문의 등록</strong>
-            <p>문의 유형과 예약 정보를 남기면 문의센터 목록으로 돌아갑니다.</p>
+            <strong>관리자 문의 등록</strong>
+            <p>운영팀이 확인할 이슈를 정리해서 남기면 상세 문의 내역으로 연결됩니다.</p>
           </div>
         </div>
         <div className="mypage-guide-banner">
-          <span>예약번호를 같이 남기면 답변이 더 빨라집니다.</span>
+          <span>운영 문의에 필요한 경우 예약번호와 관련 숙소를 함께 남길 수 있습니다.</span>
         </div>
+        {error ? <div className="my-empty-inline">{error}</div> : null}
         <div className="inquiry-form-grid">
           <label className="field-block inquiry-field-full">
             <span>문의 제목</span>
@@ -58,11 +70,11 @@ export default function MyInquiryCreatePage() {
           </div>
           <label className="field-block">
             <span>관련 예약번호</span>
-            <input value={form.bookingNo} onChange={(e) => handleChange("bookingNo", e.target.value)} placeholder="예: B-24032" />
+            <input value={form.bookingNo} onChange={(e) => handleChange("bookingNo", e.target.value)} placeholder="선택 입력" />
           </label>
           <label className="field-block inquiry-field-full">
             <span>관련 숙소</span>
-            <input value={form.lodging} onChange={(e) => handleChange("lodging", e.target.value)} placeholder="예: 해운대 오션 스테이" />
+            <input value={form.lodging} onChange={(e) => handleChange("lodging", e.target.value)} placeholder="선택 입력" />
           </label>
           <label className="field-block inquiry-field-full">
             <span>문의 내용</span>
@@ -70,7 +82,9 @@ export default function MyInquiryCreatePage() {
           </label>
         </div>
         <div className="inquiry-action-bar">
-          <button type="submit" className="coupon-action-button inquiry-submit-link">등록 완료</button>
+          <button type="submit" className="coupon-action-button inquiry-submit-link" disabled={isSubmitting}>
+            {isSubmitting ? "등록 중..." : "등록 완료"}
+          </button>
           <Link className="text-link" to="/my/inquiries">취소</Link>
         </div>
       </form>

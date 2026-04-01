@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import DataTable from "../../components/common/DataTable";
 import { getSellerReservations, updateSellerReservationStatus } from "../../services/dashboardService";
@@ -12,14 +12,49 @@ const columns = [
 ];
 
 export default function SellerReservationsPage() {
-  const [rows, setRows] = useState(() => getSellerReservations());
-  const [selectedNo, setSelectedNo] = useState(rows[0]?.no ?? null);
+  const [rows, setRows] = useState([]);
+  const [selectedNo, setSelectedNo] = useState(null);
+  const [notice, setNotice] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const selected = rows.find((row) => row.no === selectedNo) ?? rows[0];
 
-  const updateStatus = (nextStatus) => {
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRows() {
+      try {
+        setIsLoading(true);
+        const nextRows = await getSellerReservations();
+        if (cancelled) return;
+        setRows(nextRows);
+        setSelectedNo(nextRows[0]?.no ?? null);
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Failed to load seller reservations.", error);
+        setNotice("예약 목록을 불러오지 못했습니다.");
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadRows();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const updateStatus = async (nextStatus) => {
     if (!selected) return;
-    const nextRows = updateSellerReservationStatus(selected.no, nextStatus);
-    setRows(nextRows);
+    try {
+      const updated = await updateSellerReservationStatus(selected.no, nextStatus);
+      setRows((prev) => prev.map((row) => (row.no === selected.no ? { ...row, ...updated } : row)));
+      setNotice("");
+    } catch (error) {
+      setNotice(error.message);
+    }
   };
 
   return (
@@ -29,11 +64,13 @@ export default function SellerReservationsPage() {
           <p className="eyebrow">예약 운영</p>
           <h1>예약 관리</h1>
           <p>대기 {rows.filter((r) => r.status === "PENDING").length}건 · 확정 {rows.filter((r) => r.status === "CONFIRMED").length}건 · 취소 {rows.filter((r) => r.status === "CANCELED").length}건</p>
+          {notice ? <p>{notice}</p> : null}
         </div>
       </div>
 
       <div className="dash-table-split">
         <section className="dash-content-section" style={{ marginBottom: 0 }}>
+          {isLoading ? <div className="my-empty-inline">예약 목록을 불러오는 중입니다.</div> : null}
           <DataTable
             columns={columns}
             rows={rows}
@@ -47,9 +84,9 @@ export default function SellerReservationsPage() {
           <h3>{selected?.no ?? "—"}</h3>
           <p>{selected?.guest} · {selected?.stay}</p>
           <div className="dash-action-grid">
-            <button type="button" className="dash-action-btn is-primary" onClick={() => updateStatus("CONFIRMED")}>확정</button>
-            <button type="button" className="dash-action-btn" onClick={() => updateStatus("COMPLETED")}>완료</button>
-            <button type="button" className="dash-action-btn is-danger" onClick={() => updateStatus("CANCELED")}>취소</button>
+            <button type="button" className="dash-action-btn is-primary" onClick={() => updateStatus("CONFIRMED")} disabled={!selected}>확정</button>
+            <button type="button" className="dash-action-btn" onClick={() => updateStatus("COMPLETED")} disabled={!selected}>완료</button>
+            <button type="button" className="dash-action-btn is-danger" onClick={() => updateStatus("CANCELED")} disabled={!selected}>취소</button>
           </div>
         </div>
       </div>

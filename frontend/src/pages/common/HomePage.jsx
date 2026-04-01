@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { destinationStats, homeSearchDefaults, promoBanners } from "../../data/homeData";
+import { homeSearchDefaults, promoBanners } from "../../data/homeData";
 import { DateRangePopover, GuestPopover, SuggestionsPanel } from "../../features/home/HomeSearchPanels";
 import { HomeCollectionSection, HomePromoSection } from "../../features/home/HomeSections";
 import { SEARCH_TABS, SUGGESTION_ICON } from "../../features/home/homeConstants";
@@ -11,9 +11,27 @@ import {
   readRecentSearches,
   writeRecentSearches,
 } from "../../features/home/homeViewModel";
-import { getLodgingCollections, getLodgings, getSearchSuggestionItems } from "../../services/lodgingService";
+import { getCachedLodgingsSnapshot, getLodgingCollections, getLodgings, getSearchSuggestionItems } from "../../services/lodgingService";
 
 export default function HomePage() {
+  const cachedLodgings = getCachedLodgingsSnapshot();
+  const cachedCollections = cachedLodgings.length ? [
+    {
+      title: "이번 주말 예약 가능한 부산 숙소",
+      region: "부산",
+      ids: cachedLodgings.filter((item) => item.region === "부산").map((item) => item.id).slice(0, 4),
+    },
+    {
+      title: "제주 감도 높은 스테이",
+      region: "제주",
+      ids: cachedLodgings.filter((item) => item.region === "제주").map((item) => item.id).slice(0, 4),
+    },
+    {
+      title: "지금 둘러보기 좋은 숙소",
+      region: cachedLodgings[0]?.region ?? "국내",
+      ids: cachedLodgings.map((item) => item.id).slice(0, 4),
+    },
+  ].filter((collection) => collection.ids.length) : [];
   const navigate = useNavigate();
   const searchShellRef = useRef(null);
   const keywordRef = useRef(null);
@@ -28,8 +46,8 @@ export default function HomePage() {
   const [activeSuggest, setActiveSuggest] = useState(0);
   const [activeTab, setActiveTab] = useState("domestic");
   const [visibleMonth, setVisibleMonth] = useState(parseISO(homeSearchDefaults.checkIn) ?? new Date());
-  const [lodgings, setLodgings] = useState([]);
-  const [lodgingCollections, setLodgingCollections] = useState([]);
+  const [lodgings, setLodgings] = useState(cachedLodgings);
+  const [lodgingCollections, setLodgingCollections] = useState(cachedCollections);
   const [searchSuggestionItems, setSearchSuggestionItems] = useState([]);
   const currentTab = SEARCH_TABS.find((tab) => tab.key === activeTab) ?? SEARCH_TABS[0];
 
@@ -37,10 +55,21 @@ export default function HomePage() {
     () => buildHomeSuggestionItems(lodgings, searchSuggestionItems),
     [lodgings, searchSuggestionItems],
   );
-  const filteredSuggestions = useMemo(
-    () => filterHomeSuggestions(allSuggestionItems, searchForm.keyword),
-    [allSuggestionItems, searchForm.keyword],
-  );
+  const heroStats = useMemo(() => {
+    const availableLodgings = lodgings.length;
+    const weekendDeals = lodgings.filter((lodging) => Number(String(lodging.price ?? "").replace(/[^\d]/g, "")) <= 180000).length;
+    const instantRooms = lodgings.reduce((sum, lodging) => {
+      return sum + (lodging.rooms ?? []).filter((room) => room.status === "AVAILABLE").length;
+    }, 0);
+
+    return [
+      { label: "오늘 확인 가능한 숙소", value: `${availableLodgings}+` },
+      { label: "이번 주말 특가", value: String(weekendDeals) },
+      { label: "즉시 확정 객실", value: String(instantRooms) },
+    ];
+  }, [lodgings]);
+
+  const filteredSuggestions = useMemo(() => filterHomeSuggestions(allSuggestionItems, searchForm.keyword), [allSuggestionItems, searchForm.keyword]);
 
   useEffect(() => {
     setRecentSearches(readRecentSearches());
@@ -51,10 +80,10 @@ export default function HomePage() {
 
     async function loadHomeData() {
       try {
-        const [nextLodgings, nextCollections, nextSuggestions] = await Promise.all([
-          getLodgings(),
-          getLodgingCollections(),
-          getSearchSuggestionItems(),
+        const nextLodgings = await getLodgings();
+        const [nextCollections, nextSuggestions] = await Promise.all([
+          getLodgingCollections(nextLodgings),
+          getSearchSuggestionItems(nextLodgings),
         ]);
 
         if (cancelled) return;
@@ -160,17 +189,17 @@ export default function HomePage() {
         <div className="home-hero-inner">
           <div className="home-hero-copy">
             <div className="home-hero-brand">국내 숙소 예약</div>
-            <h1>오늘 가고 싶은 곳을 고르고 바로 예약해 보세요.</h1>
+            <h1>오늘 갈 곳을 빠르게 정하고 바로 예약하세요</h1>
             <div className="hero-actions">
               <Link className="primary-button" to="/lodgings">
                 숙소 검색하기
               </Link>
               <Link className="secondary-button hero-secondary" to="/events">
-                오늘의 혜택 보기
+                오늘 특가 보기
               </Link>
             </div>
             <div className="hero-stat-row">
-              {destinationStats.map((item) => (
+              {heroStats.map((item) => (
                 <div key={item.label} className="hero-stat-item">
                   <span>{item.label}</span>
                   <strong>{item.value}</strong>
@@ -179,7 +208,15 @@ export default function HomePage() {
             </div>
           </div>
 
-          <form ref={searchShellRef} className="search-panel search-panel-classic" onSubmit={handleSearchSubmit}>
+          <form
+            ref={searchShellRef}
+            className="search-panel search-panel-classic search-panel-showcase"
+            onSubmit={handleSearchSubmit}
+          >
+            <div className="search-panel-ambient" aria-hidden="true">
+              <span className="search-panel-accent search-panel-accent-warm" />
+              <span className="search-panel-accent search-panel-accent-cool" />
+            </div>
             <div className="search-classic-stack">
               <label
                 ref={keywordRef}
@@ -277,7 +314,17 @@ export default function HomePage() {
         {!lodgingCollections.length ? (
           <section className="home-section">
             <div className="home-section-head">
-              <h2>추천 숙소를 불러오는 중입니다.</h2>
+              <h2>추천 숙소</h2>
+            </div>
+            <div className="home-skeleton-grid" aria-hidden="true">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="home-skeleton-card">
+                  <div className="home-skeleton-visual" />
+                  <div className="home-skeleton-line home-skeleton-line-title" />
+                  <div className="home-skeleton-line" />
+                  <div className="home-skeleton-line home-skeleton-line-short" />
+                </div>
+              ))}
             </div>
           </section>
         ) : (

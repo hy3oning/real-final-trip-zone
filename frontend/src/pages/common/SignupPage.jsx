@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
 import { authProviders, defaultSignupForm } from "../../data/authData";
 import {
   getAuthProviderMark,
   getKakaoAuthUrl,
   getNaverAuthUrl,
-  loginWithGooglePopup,
+  isGoogleLoginAvailable,
   loginWithSessionPayload,
   signupWithCredentials,
 } from "../../features/auth/authViewModels";
@@ -17,6 +18,7 @@ export default function SignupPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const canSubmit = form.name.trim() && form.email.trim() && form.phone.trim() && form.password.trim();
+  const socialProviders = authProviders.filter((provider) => provider.key !== "LOCAL" && (provider.key !== "GOOGLE" || isGoogleLoginAvailable()));
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -54,8 +56,7 @@ export default function SignupPage() {
         return;
       }
 
-      const session = await loginWithGooglePopup();
-      navigate(loginWithSessionPayload(session));
+      throw new Error("구글 회원가입 버튼을 다시 눌러 주세요.");
     } catch (error) {
       setErrorMessage(error.message || "소셜 회원가입에 실패했습니다.");
     }
@@ -154,21 +155,29 @@ export default function SignupPage() {
           </div>
 
           <div className="auth-provider-stack">
-            {authProviders
-              .filter((provider) => provider.key !== "LOCAL")
-              .map((provider) => (
-                <button
-                  key={provider.key}
-                  type="button"
-                  className={`auth-provider-line auth-provider-${provider.key.toLowerCase()}`}
-                  onClick={() => handleSocialSignup(provider.key)}
-                >
-                  <span className="auth-provider-mark" aria-hidden="true">
-                    {getAuthProviderMark(provider.key)}
-                  </span>
-                  <strong>{provider.label}로 가입하기</strong>
-                </button>
-              ))}
+            {socialProviders.map((provider) =>
+                provider.key === "GOOGLE" ? (
+                  <div key={provider.key} className="auth-provider-line auth-provider-google-button">
+                    <GoogleSignInButton
+                      text="signup_with"
+                      onSuccess={(session) => navigate(loginWithSessionPayload(session))}
+                      onError={(error) => setErrorMessage(error.message || "구글 회원가입에 실패했습니다.")}
+                    />
+                  </div>
+                ) : (
+                  <button
+                    key={provider.key}
+                    type="button"
+                    className={`auth-provider-line auth-provider-${provider.key.toLowerCase()}`}
+                    onClick={() => handleSocialSignup(provider.key)}
+                  >
+                    <span className="auth-provider-mark" aria-hidden="true">
+                      {getAuthProviderMark(provider.key)}
+                    </span>
+                    <strong>{provider.label}로 가입하기</strong>
+                  </button>
+                ),
+              )}
           </div>
 
           <div className="auth-links">
