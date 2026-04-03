@@ -37,9 +37,9 @@ export function RoomOptionsSection({ lodging, roomOptions, selectedRoom, onSelec
   return (
     <section className="detail-review-section">
       <div className="detail-headline">
-        <span className="small-label">객실 선택</span>
-        <h2>예약 가능한 객실</h2>
-        <p>{lodging.room}</p>
+        <span className="small-label">객실 셀렉션</span>
+        <h2>지금 고를 수 있는 객실</h2>
+        <p>체크인 동선, 포함 혜택, 기본 요금을 비교하고 바로 예약 단계로 이어지게 정리했습니다.</p>
       </div>
       {!roomOptions.length ? (
         <div className="list-empty-state">
@@ -56,12 +56,12 @@ export function RoomOptionsSection({ lodging, roomOptions, selectedRoom, onSelec
             onClick={() => onSelectRoom(room)}
           >
             <div className="room-option-visual" style={{ backgroundImage: `url(${room.image})` }}>
-              <span>{room.badge}</span>
+              <span>{selectedRoom?.id === room.id ? "선택한 객실" : room.badge}</span>
             </div>
             <div className="room-option-body">
               <div className="room-option-top">
                 <strong>{room.name}</strong>
-                <span>{getRoomMeta(room.name)}</span>
+                <span>{selectedRoom?.id === room.id ? "예약 요약에 반영됨" : getRoomMeta(room.name)}</span>
               </div>
               <p>{room.description}</p>
               <div className="room-option-meta">
@@ -100,8 +100,29 @@ export function ReviewSection({ authSession, canWriteReview, galleryImages, lodg
       <div className="review-summary-strip">
         <span className="accent-rating">★ {reviewAverage}</span>
         <span>{lodging.reviewCount}</span>
-        <span className="accent-benefit">{lodging.benefit}</span>
-        <span>{lodging.cancellation}</span>
+      </div>
+      <div className="detail-review-list">
+        {reviews.map((item, index) => (
+          <article key={item.id ?? `${item.author}-${item.stay}-${index}`} className="detail-review-item">
+            <div className="detail-review-head">
+              <strong>{item.author}</strong>
+              <span className="detail-review-stars-readonly">
+                {renderStars(item.score)}
+                <em>{item.stay}</em>
+              </span>
+            </div>
+            <p>{item.body}</p>
+            <div className="detail-review-gallery">
+              {(item.images?.length ? item.images : galleryImages.slice(0, 2)).map((image, imageIndex) => (
+                <div
+                  key={`${item.id ?? item.author}-${imageIndex}`}
+                  className="detail-review-thumb"
+                  style={{ backgroundImage: `url(${image}${item.images?.length ? "" : index === 1 ? "&sat=6" : ""})` }}
+                />
+              ))}
+            </div>
+          </article>
+        ))}
       </div>
       {canWriteReview ? (
         <form className="detail-review-form" onSubmit={onSubmit}>
@@ -133,42 +154,21 @@ export function ReviewSection({ authSession, canWriteReview, galleryImages, lodg
           </div>
         </form>
       ) : (
-        <div className="detail-review-gate">
-          <strong>{authSession ? "숙박 완료 예약 후 후기 작성 가능" : "로그인 후 후기 작성 가능"}</strong>
-          <p>{authSession ? "설계 기준에 따라 숙박 완료된 예약에 대해서만 리뷰를 등록할 수 있습니다." : "후기 작성은 로그인 후 이용할 수 있습니다."}</p>
-          <Link className="secondary-button" to={authSession ? "/my/bookings" : "/login"}>
-            {authSession ? "내 예약에서 완료 내역 보기" : "로그인하기"}
-          </Link>
-        </div>
+        reviews.length === 0 && (
+          <div className="detail-review-gate">
+            <strong>{authSession ? "숙박 완료 예약 후 후기 작성 가능" : "로그인 후 후기 작성 가능"}</strong>
+            <p>{authSession ? "숙박을 완료한 예약에 대해서만 후기를 등록할 수 있습니다." : "후기 작성은 로그인 후 이용할 수 있습니다."}</p>
+            <Link className="secondary-button" to={authSession ? "/my/bookings" : "/login"}>
+              {authSession ? "내 예약에서 완료 내역 보기" : "로그인하기"}
+            </Link>
+          </div>
+        )
       )}
-      <div className="detail-review-list">
-        {reviews.map((item, index) => (
-          <article key={item.id ?? `${item.author}-${item.stay}-${index}`} className="detail-review-item">
-            <div className="detail-review-head">
-              <strong>{item.author}</strong>
-              <span className="detail-review-stars-readonly">
-                {renderStars(item.score)}
-                <em>{item.stay}</em>
-              </span>
-            </div>
-            <p>{item.body}</p>
-            <div className="detail-review-gallery">
-              {(item.images?.length ? item.images : galleryImages.slice(0, 2)).map((image, imageIndex) => (
-                <div
-                  key={`${item.id ?? item.author}-${imageIndex}`}
-                  className="detail-review-thumb"
-                  style={{ backgroundImage: `url(${image}${item.images?.length ? "" : index === 1 ? "&sat=6" : ""})` }}
-                />
-              ))}
-            </div>
-          </article>
-        ))}
-      </div>
     </section>
   );
 }
 
-export function StickyBookingCard({ lodging, selectedRoom, roomBaseMeta }) {
+export function StickyBookingCard({ lodging, selectedRoom, roomBaseMeta, bookingDateSuffix = "" }) {
   if (!selectedRoom) {
     return (
       <aside className="sticky-booking-card">
@@ -207,11 +207,11 @@ export function StickyBookingCard({ lodging, selectedRoom, roomBaseMeta }) {
       </div>
       <div className="sticky-booking-facts">
         <div>
-          <span>객실 혜택</span>
+          <span>핵심 혜택</span>
           <strong>{selectedRoom.badge}</strong>
         </div>
         <div>
-          <span>주요 조건</span>
+          <span>선택 포인트</span>
           <strong>{lodging.highlights[0]}</strong>
         </div>
       </div>
@@ -229,7 +229,7 @@ export function StickyBookingCard({ lodging, selectedRoom, roomBaseMeta }) {
         <span className="inline-chip">즉시 확정</span>
         <span className="inline-chip">무료 취소 확인</span>
       </div>
-      <Link className="primary-button booking-card-button" to={`/booking/${lodging.id}?room=${encodeURIComponent(selectedRoom.name)}`}>
+      <Link className="primary-button booking-card-button" to={`/booking/${lodging.id}?room=${encodeURIComponent(selectedRoom.name)}${bookingDateSuffix ? `&${bookingDateSuffix.slice(1)}` : ""}`}>
         객실 선택 후 예약
       </Link>
     </aside>

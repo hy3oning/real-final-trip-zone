@@ -1,37 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { homeSearchDefaults, promoBanners } from "../../data/homeData";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { homeSearchDefaults } from "../../data/homeData";
 import { DateRangePopover, GuestPopover, SuggestionsPanel } from "../../features/home/HomeSearchPanels";
-import { HomeCollectionSection, HomePromoSection } from "../../features/home/HomeSections";
-import { SEARCH_TABS, SUGGESTION_ICON } from "../../features/home/homeConstants";
-import { buildCollectionCards, formatDateSummary, parseISO, toISO } from "../../features/home/homeUtils";
+import { HomeRegionSection } from "../../features/home/HomeSections";
+import { SUGGESTION_ICON } from "../../features/home/homeConstants";
+import { formatDateSummary, parseISO, toISO } from "../../features/home/homeUtils";
 import {
   buildHomeSuggestionItems,
   filterHomeSuggestions,
   readRecentSearches,
   writeRecentSearches,
 } from "../../features/home/homeViewModel";
-import { getCachedLodgingsSnapshot, getLodgingCollections, getLodgings, getSearchSuggestionItems, subscribeLodgingsInvalidated } from "../../services/lodgingService";
+import { getCachedLodgingsSnapshot, getLodgings, getSearchSuggestionItems, subscribeLodgingsInvalidated } from "../../services/lodgingService";
 
 export default function HomePage() {
+  const location = useLocation();
   const cachedLodgings = getCachedLodgingsSnapshot();
-  const cachedCollections = cachedLodgings.length ? [
-    {
-      title: "이번 주말 예약 가능한 부산 숙소",
-      region: "부산",
-      ids: cachedLodgings.filter((item) => item.region === "부산").map((item) => item.id).slice(0, 4),
-    },
-    {
-      title: "제주 감도 높은 스테이",
-      region: "제주",
-      ids: cachedLodgings.filter((item) => item.region === "제주").map((item) => item.id).slice(0, 4),
-    },
-    {
-      title: "지금 둘러보기 좋은 숙소",
-      region: cachedLodgings[0]?.region ?? "국내",
-      ids: cachedLodgings.map((item) => item.id).slice(0, 4),
-    },
-  ].filter((collection) => collection.ids.length) : [];
   const navigate = useNavigate();
   const searchShellRef = useRef(null);
   const keywordRef = useRef(null);
@@ -44,35 +28,125 @@ export default function HomePage() {
   const [recentSearches, setRecentSearches] = useState([]);
   const [activePanel, setActivePanel] = useState(null);
   const [activeSuggest, setActiveSuggest] = useState(0);
-  const [activeTab, setActiveTab] = useState("domestic");
+  const [activeTab] = useState("domestic");
   const [visibleMonth, setVisibleMonth] = useState(parseISO(homeSearchDefaults.checkIn) ?? new Date());
   const [lodgings, setLodgings] = useState(cachedLodgings);
-  const [lodgingCollections, setLodgingCollections] = useState(cachedCollections);
+  const [lodgingsLoading, setLodgingsLoading] = useState(cachedLodgings.length === 0);
   const [searchSuggestionItems, setSearchSuggestionItems] = useState([]);
-  const currentTab = SEARCH_TABS.find((tab) => tab.key === activeTab) ?? SEARCH_TABS[0];
+  const heroShortcuts = useMemo(
+    () => [
+      {
+        label: "숙소 탐색",
+        to: "/lodgings",
+        active: location.pathname.startsWith("/lodgings") && !location.search.includes("theme=deal"),
+      },
+      {
+        label: "오늘 특가",
+        to: "/lodgings?theme=deal",
+        active: location.pathname === "/lodgings" && location.search.includes("theme=deal"),
+      },
+      {
+        label: "예약 내역",
+        to: "/my/bookings",
+        active: location.pathname.startsWith("/my/bookings"),
+      },
+    ],
+    [location.pathname, location.search],
+  );
+  const popularRegions = useMemo(() => {
+    const baseRegions = [
+      {
+        id: "region-jeju",
+        title: "제주",
+        region: "제주",
+        href: "/lodgings?region=제주",
+        image:
+          "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80",
+        caption: "오션뷰와 리조트 중심",
+      },
+      {
+        id: "region-busan",
+        title: "부산",
+        region: "부산",
+        href: "/lodgings?region=부산",
+        image:
+          "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1400&q=80",
+        caption: "주말 바다 여행 인기",
+      },
+      {
+        id: "region-seoul",
+        title: "서울",
+        region: "서울",
+        href: "/lodgings?region=서울",
+        image:
+          "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1400&q=80",
+        caption: "도심 호캉스와 스테이",
+      },
+      {
+        id: "region-gangwon",
+        title: "강원",
+        region: "강원",
+        href: "/lodgings?region=강원",
+        image:
+          "https://images.unsplash.com/photo-1548625149-720523a7c103?auto=format&fit=crop&w=1400&q=80",
+        caption: "강릉 · 양양 · 속초 감성 숙소",
+      },
+    ];
+
+    return baseRegions.map((item) => {
+      const matches = lodgings.filter((lodging) => lodging.region === item.region);
+      const ranked = matches
+        .map((lodging) => ({
+          ...lodging,
+          numericPrice: Number(String(lodging.price ?? "").replace(/[^\d]/g, "")) || Number.MAX_SAFE_INTEGER,
+        }))
+        .sort((left, right) => left.numericPrice - right.numericPrice);
+
+      const lead = ranked[0];
+      return {
+        ...item,
+        image: lead?.image ?? item.image,
+        price: lead?.price ?? "",
+        count: matches.length,
+        district: lead?.district ?? `${item.region} 추천 숙소`,
+        stayName: lead?.name ?? `${item.region} 대표 숙소`,
+        rating: lead?.rating ?? "0.0",
+        reviewCount: lead?.reviewCount ?? "0개",
+        benefit: lead?.benefit ?? item.caption,
+      };
+    });
+  }, [lodgings]);
+
+  const heroStats = useMemo(() => {
+    const activeCount = lodgings.filter((item) => item.status === "ACTIVE").length;
+    const reviewTotal = lodgings.reduce((total, item) => {
+      const count = Number(String(item.reviewCount ?? "").replace(/[^\d]/g, ""));
+      return total + (Number.isFinite(count) ? count : 0);
+    }, 0);
+    const regions = new Set(lodgings.map((item) => item.region).filter(Boolean));
+
+    return [
+      { label: "예약 가능 숙소", value: `${activeCount || lodgings.length || 18}+` },
+      { label: "인기 지역", value: `${regions.size || popularRegions.length || 8}` },
+      { label: "누적 후기", value: `${reviewTotal || 1200}+` },
+    ];
+  }, [lodgings, popularRegions.length]);
 
   const allSuggestionItems = useMemo(
     () => buildHomeSuggestionItems(lodgings, searchSuggestionItems),
     [lodgings, searchSuggestionItems],
   );
-  const heroStats = useMemo(() => {
-    const availableLodgings = lodgings.length;
-    const weekendDeals = lodgings.filter((lodging) => Number(String(lodging.price ?? "").replace(/[^\d]/g, "")) <= 180000).length;
-    const instantRooms = lodgings.reduce((sum, lodging) => {
-      return sum + (lodging.rooms ?? []).filter((room) => room.status === "AVAILABLE").length;
-    }, 0);
-
-    return [
-      { label: "오늘 확인 가능한 숙소", value: `${availableLodgings}+` },
-      { label: "이번 주말 특가", value: String(weekendDeals) },
-      { label: "즉시 확정 객실", value: String(instantRooms) },
-    ];
-  }, [lodgings]);
-
   const filteredSuggestions = useMemo(() => filterHomeSuggestions(allSuggestionItems, searchForm.keyword), [allSuggestionItems, searchForm.keyword]);
 
   useEffect(() => {
     setRecentSearches(readRecentSearches());
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.add("home-page-active");
+    return () => {
+      document.body.classList.remove("home-page-active");
+    };
   }, []);
 
   useEffect(() => {
@@ -81,14 +155,11 @@ export default function HomePage() {
     async function loadHomeData() {
       try {
         const nextLodgings = await getLodgings();
-        const [nextCollections, nextSuggestions] = await Promise.all([
-          getLodgingCollections(nextLodgings),
-          getSearchSuggestionItems(nextLodgings),
-        ]);
+        const nextSuggestions = await getSearchSuggestionItems(nextLodgings);
 
         if (cancelled) return;
         setLodgings(nextLodgings);
-        setLodgingCollections(nextCollections);
+        setLodgingsLoading(false);
         setSearchSuggestionItems(nextSuggestions);
       } catch (error) {
         console.error("Failed to load home lodging data.", error);
@@ -144,6 +215,10 @@ export default function HomePage() {
   };
 
   const handleDatePick = (day) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (day < today) return;
+
     const picked = toISO(day);
 
     if (!searchForm.checkIn || searchForm.checkOut) {
@@ -188,87 +263,78 @@ export default function HomePage() {
 
   return (
     <div className="home-shell">
-      <section className="home-hero">
-        <div className="home-hero-backdrop" />
-        <div className="home-hero-overlay" />
-        <div className="home-hero-inner">
-          <div className="home-hero-copy">
-            <div className="home-hero-brand">국내 숙소 예약</div>
-            <h1>오늘 갈 곳을 빠르게 정하고 바로 예약하세요</h1>
-            <div className="hero-actions">
-              <Link className="primary-button" to="/lodgings">
-                숙소 검색하기
-              </Link>
-              <Link className="secondary-button hero-secondary" to="/events">
-                오늘 특가 보기
-              </Link>
-            </div>
-            <div className="hero-stat-row">
-              {heroStats.map((item) => (
-                <div key={item.label} className="hero-stat-item">
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
+      <section className="home-rebuild-stage home-rebuild-viewport">
+        <div className="home-rebuild-shell">
+          <div className="home-rebuild-copy">
+            <h1>
+              지금 머물고 싶은 여행지를
+              <span className="home-rebuild-headline-break">한 번에 찾으세요.</span>
+            </h1>
           </div>
 
-          <form
-            ref={searchShellRef}
-            className="search-panel search-panel-classic search-panel-showcase"
-            onSubmit={handleSearchSubmit}
-          >
-            <div className="search-panel-ambient" aria-hidden="true">
-              <span className="search-panel-accent search-panel-accent-warm" />
-              <span className="search-panel-accent search-panel-accent-cool" />
-            </div>
-            <div className="search-classic-stack">
-              <label
-                ref={keywordRef}
-                className={`search-field search-field-button search-field-keyword${activePanel === "keyword" ? " is-active" : ""}`}
-              >
-                <span>숙소 검색</span>
-                <input
-                  className="search-input"
-                  value={searchForm.keyword}
-                  placeholder={currentTab.placeholder}
-                  onFocus={() => setActivePanel("keyword")}
-                  onKeyDown={handleKeywordKeyDown}
-                  onChange={(event) => {
-                    setSearchForm((current) => ({ ...current, keyword: event.target.value }));
-                    setActivePanel("keyword");
-                  }}
-                />
-              </label>
-
-              <button
-                ref={dateRef}
-                type="button"
-                className={`search-field search-field-button${activePanel === "date" ? " is-active" : ""}`}
-                onClick={() => {
-                  setVisibleMonth(parseISO(searchForm.checkIn) ?? new Date());
-                  setActivePanel((current) => (current === "date" ? null : "date"));
+          <form ref={searchShellRef} className="home-rebuild-search-strip" onSubmit={handleSearchSubmit}>
+            <label
+              ref={keywordRef}
+              className={`home-rebuild-search-field${activePanel === "keyword" ? " is-active" : ""}`}
+            >
+              <span>지역</span>
+              <input
+                className="home-rebuild-search-input"
+                value={searchForm.keyword}
+                placeholder="어디로 떠나세요"
+                onFocus={() => setActivePanel("keyword")}
+                onKeyDown={handleKeywordKeyDown}
+                onChange={(event) => {
+                  setSearchForm((current) => ({ ...current, keyword: event.target.value }));
+                  setActivePanel("keyword");
                 }}
-              >
-                <span>체크인 / 체크아웃</span>
-                <strong>{formatDateSummary(searchForm.checkIn, searchForm.checkOut)}</strong>
-              </button>
+              />
+            </label>
 
-              <button
-                ref={guestsRef}
-                type="button"
-                className={`search-field search-field-button${activePanel === "guests" ? " is-active" : ""}`}
-                onClick={() => setActivePanel((current) => (current === "guests" ? null : "guests"))}
-              >
-                <span>인원</span>
-                <strong>성인 {searchForm.guests}명 · 객실 1개</strong>
-              </button>
-            </div>
+            <button
+              ref={dateRef}
+              type="button"
+              className={`home-rebuild-search-field${activePanel === "date" ? " is-active" : ""}`}
+              onClick={() => {
+                setVisibleMonth(parseISO(searchForm.checkIn) ?? new Date());
+                setActivePanel((current) => (current === "date" ? null : "date"));
+              }}
+            >
+              <span>일정</span>
+              <strong>{formatDateSummary(searchForm.checkIn, searchForm.checkOut)}</strong>
+            </button>
 
-            <button className="primary-button search-submit" type="submit">
-              조건으로 숙소 찾기
+            <button
+              ref={guestsRef}
+              type="button"
+              className={`home-rebuild-search-field${activePanel === "guests" ? " is-active" : ""}`}
+              onClick={() => setActivePanel((current) => (current === "guests" ? null : "guests"))}
+            >
+              <span>인원</span>
+              <strong>성인 {searchForm.guests}명 · 객실 1개</strong>
+            </button>
+
+            <button className="home-rebuild-search-submit" type="submit">
+              검색
             </button>
           </form>
+
+          <div className="home-rebuild-shortcut-row" aria-label="홈 빠른 이동">
+            {heroShortcuts.map((item) => (
+              <Link key={item.label} className={`home-rebuild-shortcut-link${item.active ? " is-active" : ""}`} to={item.to}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+
+          <div className="home-rebuild-stat-row" aria-label="홈 요약 지표">
+            {heroStats.map((item) => (
+              <div key={item.label} className="home-rebuild-stat-card">
+                <strong>{lodgingsLoading ? "—" : item.value}</strong>
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
 
           <SuggestionsPanel
             open={activePanel === "keyword"}
@@ -314,33 +380,7 @@ export default function HomePage() {
       </section>
 
       <div className="container home-content">
-        <HomePromoSection promoBanners={promoBanners} />
-
-        {!lodgingCollections.length ? (
-          <section className="home-section">
-            <div className="home-section-head">
-              <h2>추천 숙소</h2>
-            </div>
-            <div className="home-skeleton-grid" aria-hidden="true">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="home-skeleton-card">
-                  <div className="home-skeleton-visual" />
-                  <div className="home-skeleton-line home-skeleton-line-title" />
-                  <div className="home-skeleton-line" />
-                  <div className="home-skeleton-line home-skeleton-line-short" />
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : (
-          lodgingCollections.map((collection) => (
-            <HomeCollectionSection
-              key={collection.title}
-              collection={collection}
-              cards={buildCollectionCards(collection, lodgings)}
-            />
-          ))
-        )}
+        <HomeRegionSection regions={popularRegions} loading={lodgingsLoading} />
       </div>
     </div>
   );

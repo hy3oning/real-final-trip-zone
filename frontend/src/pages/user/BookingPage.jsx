@@ -250,7 +250,12 @@ export default function BookingPage() {
 
       navigate(`/my/bookings/${bookingResponse.bookingId}`);
     } catch (error) {
-      setSubmitError(error.message || "예약 생성에 실패했습니다.");
+      const message = error?.message || "";
+      if (message.includes("403") || message.includes("Forbidden")) {
+        setSubmitError("예약은 일반 회원 계정에서만 진행할 수 있습니다.");
+      } else {
+        setSubmitError(message || "예약 생성에 실패했습니다.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -264,8 +269,8 @@ export default function BookingPage() {
           <h1>{lodging.name} 예약</h1>
           <p>{lodging.address}</p>
           <div className="feature-chip-row">
-            <span className="inline-chip">예약 상태 PENDING</span>
-            <span className="inline-chip">결제 상태 READY</span>
+            <span className="inline-chip">즉시 예약 확정</span>
+            <span className="inline-chip">안전 결제</span>
             <span className="inline-chip">{nightCount}박 일정</span>
             <span className="inline-chip">{totalAmount.toLocaleString()}원</span>
           </div>

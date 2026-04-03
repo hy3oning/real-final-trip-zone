@@ -1,74 +1,41 @@
 import { Link } from "react-router-dom";
 
-function formatCardPrice(priceLabel) {
-  if (!priceLabel || priceLabel === "문의 필요" || priceLabel.endsWith("~")) {
-    return priceLabel;
-  }
-
-  return `${priceLabel}~`;
-}
-
-export function HomePromoSection({ promoBanners }) {
+function RegionCardSkeleton() {
   return (
-    <section className="home-section">
-      <div className="home-section-head">
-        <h2>지금 예약이 빠른 특가</h2>
-        <Link className="text-link" to="/events">
-          이벤트 전체 보기
-        </Link>
-      </div>
-      <div className="promo-grid">
-        {promoBanners.map((item) => (
-          <Link
-            key={item.id ?? item.title}
-            to={item.href ?? "/events"}
-            className={`promo-card promo-${item.accent}`}
-            style={{ backgroundImage: `linear-gradient(180deg, rgba(8, 24, 34, 0.12), rgba(8, 24, 34, 0.58)), url(${item.image})` }}
-          >
-            <strong>{item.title}</strong>
-            <p>{item.subtitle}</p>
-            <span className="promo-date">{item.date}</span>
-          </Link>
-        ))}
-      </div>
-    </section>
+    <div className="home-rebuild-region-card home-rebuild-region-card--skeleton" aria-hidden="true">
+      <div className="home-rebuild-region-media home-rebuild-skeleton-block" />
+    </div>
   );
 }
 
-export function HomeCollectionSection({ collection, cards }) {
+export function HomeRegionSection({ regions, loading }) {
   return (
-    <section className="home-section">
-      <div className="home-section-head">
-        <h2>{collection.title}</h2>
-        <Link className="text-link" to={`/lodgings?region=${collection.region}`}>
-          지역 전체 보기
+    <section className="home-rebuild-stage home-rebuild-region-board">
+      <div className="home-rebuild-section-head">
+        <div className="home-rebuild-section-copy">
+          <span className="home-rebuild-section-eyebrow">인기 여행지</span>
+          <h2>인기 여행지</h2>
+          <p>원하는 지역을 선택해 숙소를 찾아보세요.</p>
+        </div>
+        <Link className="home-rebuild-section-link" to="/lodgings">
+          전체 지역 보기
         </Link>
       </div>
-      <div className="lodging-showcase">
-        {cards.map((lodging) => (
-          <Link key={lodging.key} className="showcase-row" to={`/lodgings/${lodging.id}`}>
-            <div className="rail-card-visual" style={{ backgroundImage: `url(${lodging.image})` }} />
-            <div className="showcase-copy">
-              <strong>{lodging.name}</strong>
-              <div className="showcase-kicker">
-                {lodging.region} · {lodging.district}
-                <span className="showcase-review-inline">
-                  ★ {lodging.rating} · {lodging.reviewCount}
-                </span>
-              </div>
-              <p className="showcase-room-meta">{lodging.room}</p>
-              <div className="showcase-foot">
-                <div className="showcase-price-stack">
-                  <div className="showcase-price-top">
-                    <span className="showcase-discount">{lodging.discountRate}</span>
-                    <span className="showcase-original-price">{lodging.originalPrice}</span>
+
+      <div className="home-rebuild-region-list" aria-label="인기 지역 카드">
+        {loading
+          ? [0, 1, 2, 3].map((i) => <RegionCardSkeleton key={i} />)
+          : regions.map((item) => (
+              <Link key={item.id ?? item.title} className="home-rebuild-region-card home-rebuild-region-card--nav" to={item.href}>
+                <div className="home-rebuild-region-media">
+                  <img src={item.image} alt={`${item.title} 여행지`} loading="lazy" />
+                  <div className="home-rebuild-region-overlay home-rebuild-region-overlay--large">
+                    <strong>{item.title}</strong>
+                    <span>{item.caption}</span>
                   </div>
-                  <span className="showcase-price">{formatCardPrice(lodging.price)}</span>
                 </div>
-              </div>
-            </div>
-          </Link>
-        ))}
+              </Link>
+            ))}
       </div>
     </section>
   );

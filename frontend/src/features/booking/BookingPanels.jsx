@@ -92,6 +92,12 @@ export function DateRangePopover({ open, anchorRef, panelRef, visibleMonth, setV
   const startDate = parseISO(checkIn);
   const endDate = parseISO(checkOut);
   const minimumDate = startOfDay(new Date());
+  const currentMonth = new Date();
+  currentMonth.setDate(1);
+  currentMonth.setHours(0, 0, 0, 0);
+  const isPrevMonthDisabled =
+    visibleMonth.getFullYear() === currentMonth.getFullYear() &&
+    visibleMonth.getMonth() === currentMonth.getMonth();
 
   return createPortal(
     <div
@@ -105,7 +111,15 @@ export function DateRangePopover({ open, anchorRef, panelRef, visibleMonth, setV
       }}
     >
       <div className="calendar-toolbar">
-        <button type="button" className="calendar-nav" onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}>
+        <button
+          type="button"
+          className="calendar-nav"
+          disabled={isPrevMonthDisabled}
+          onClick={() => {
+            if (isPrevMonthDisabled) return;
+            setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
+          }}
+        >
           이전
         </button>
         <button type="button" className="calendar-nav" onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}>

@@ -786,6 +786,20 @@
   border-color: rgba(13, 111, 104, 0.10);
 }
 
+.calendar-nav:disabled {
+  opacity: 0.34;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+.calendar-day:disabled {
+  background: #f1f4f2;
+  color: #a1aba5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 @media (max-width: 1100px) {
   .booking-hero {
     grid-template-columns: 1fr;

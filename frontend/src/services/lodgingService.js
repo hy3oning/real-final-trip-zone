@@ -11,6 +11,13 @@ const FALLBACK_COORDS = {
   longitude: 126.978,
 };
 const LODGINGS_INVALIDATED_EVENT = "tripzone:lodgings-invalidated";
+const LODGING_TYPE_LABELS = {
+  HOTEL: "호텔",
+  PENSION: "펜션",
+  GUESTHOUSE: "게스트하우스",
+  MOTEL: "모텔",
+  RESORT: "리조트",
+};
 const fallbackLodgingMap = new Map(fallbackLodgings.map((item) => [Number(item.id), item]));
 let lodgingsMemoryCache = null;
 let lodgingsRequestPromise = null;
@@ -129,7 +136,7 @@ function mapLodging(dto) {
     lodgingId: dto.lodgingNo,
     hostId: dto.hostNo,
     name: lodgingName,
-    type: dto.lodgingType,
+    type: LODGING_TYPE_LABELS[dto.lodgingType] ?? dto.lodgingType,
     region,
     district,
     address,
@@ -149,7 +156,7 @@ function mapLodging(dto) {
     rating: normalizeRating(dto.reviewAverage, fallback?.rating),
     reviewCount: normalizeReviewCount(dto.reviewCount ?? fallback?.reviewCount),
     benefit: firstRoom ? `${firstRoomName} 예약 가능` : "객실 옵션 확인 가능",
-    review: "실제 후기 연동 전입니다.",
+    review: description,
     cancellation: "취소 규정은 예약 단계에서 확인해 주세요.",
     room: firstRoom && !isCorruptedText(firstRoom.name) ? `${firstRoom.name} · 최대 ${firstRoom.maxGuestCount}인` : fallbackRoomLabel,
     price: firstRoom ? formatCurrency(firstRoom.pricePerNight) : fallbackPriceLabel,
@@ -349,7 +356,7 @@ function formatReviewTime(value) {
 function mapReviewDto(dto) {
   return {
     id: dto.reviewNo,
-    author: `회원 ${dto.userNo ?? ""}`.trim(),
+    author: dto.userNo ? `여행자 ${dto.userNo}` : "여행자",
     score: Number(dto.rating ?? 0).toFixed(1),
     stay: formatReviewTime(dto.regDate),
     body: dto.content ?? "",

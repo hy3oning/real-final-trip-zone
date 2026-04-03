@@ -4,6 +4,8 @@ import { WEEK_DAYS } from "./lodgingListConstants";
 
 function CalendarMonth({ baseDate, startDate, endDate, onPick, controls = null }) {
   const days = monthGrid(baseDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   return (
     <div className="calendar-month">
@@ -27,13 +29,15 @@ function CalendarMonth({ baseDate, startDate, endDate, onPick, controls = null }
           const isStart = sameDate(day, startDate);
           const isEnd = sameDate(day, endDate);
           const isBetween = betweenDate(day, startDate, endDate);
+          const isPast = day < today;
 
           return (
             <button
               key={toISO(day)}
               type="button"
-              className={`calendar-day${isStart ? " is-start" : ""}${isEnd ? " is-end" : ""}${isBetween ? " is-between" : ""}`}
-              onClick={() => onPick(day)}
+              disabled={isPast}
+              className={`calendar-day${isStart ? " is-start" : ""}${isEnd ? " is-end" : ""}${isBetween ? " is-between" : ""}${isPast ? " is-past" : ""}`}
+              onClick={() => !isPast && onPick(day)}
             >
               {day.getDate()}
             </button>
@@ -52,7 +56,7 @@ export function SuggestionsPanel({ open, anchorRef, panelRef, items, onPick }) {
     const update = () => {
       const rect = anchorRef.current.getBoundingClientRect();
       const width = Math.max(rect.width, 520);
-      const next = computePosition(rect, width, 340);
+      const next = computePosition(rect, width, 340, { preferBelow: true });
       setPosition({
         left: next.left,
         top: next.top,
@@ -77,8 +81,11 @@ export function SuggestionsPanel({ open, anchorRef, panelRef, items, onPick }) {
       className="search-floating-panel search-suggestion-panel"
       style={{ left: `${position.left}px`, top: `${position.top}px`, width: `${position.width}px`, maxHeight: `${position.maxHeight}px` }}
     >
+      <div className="search-panel-head">
+        <strong>연관 검색</strong>
+        <span>도시, 역, 숙소명을 더 빠르게 고를 수 있습니다.</span>
+      </div>
       <div className="search-suggestion-group">
-        <span className="search-chip-label">연관 검색</span>
         <div className="search-suggestion-list search-suggestion-list-stacked">
           {items.length ? (
             items.map((item) => (
@@ -133,6 +140,12 @@ export function DateRangePopover({ open, anchorRef, panelRef, visibleMonth, setV
   if (!open || !position) return null;
   const startDate = parseISO(checkIn);
   const endDate = parseISO(checkOut);
+  const currentMonth = new Date();
+  currentMonth.setDate(1);
+  currentMonth.setHours(0, 0, 0, 0);
+  const isPrevMonthDisabled =
+    visibleMonth.getFullYear() === currentMonth.getFullYear() &&
+    visibleMonth.getMonth() === currentMonth.getMonth();
 
   return createPortal(
     <div
@@ -140,6 +153,10 @@ export function DateRangePopover({ open, anchorRef, panelRef, visibleMonth, setV
       className="search-floating-panel search-calendar-panel"
       style={{ left: `${position.left}px`, top: `${position.top}px`, width: `${position.width}px`, maxHeight: `${position.maxHeight}px` }}
     >
+      <div className="search-panel-head">
+        <strong>체크인 · 체크아웃</strong>
+        <span>{formatDateSummary(checkIn, checkOut)}</span>
+      </div>
       <div className="calendar-month-grid" style={{ gridTemplateColumns: position.isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))" }}>
         <CalendarMonth
           baseDate={visibleMonth}
@@ -148,7 +165,15 @@ export function DateRangePopover({ open, anchorRef, panelRef, visibleMonth, setV
           onPick={onPick}
           controls={(
             <div className="calendar-toolbar">
-              <button type="button" className="calendar-nav" onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}>
+              <button
+                type="button"
+                className="calendar-nav"
+                disabled={isPrevMonthDisabled}
+                onClick={() => {
+                  if (isPrevMonthDisabled) return;
+                  setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
+                }}
+              >
                 이전
               </button>
               <button type="button" className="calendar-nav" onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}>
@@ -196,6 +221,10 @@ export function GuestPopover({ open, anchorRef, panelRef, guests, onChange, onCl
 
   return createPortal(
     <div ref={panelRef} className="search-floating-panel guest-panel" style={{ left: `${position.left}px`, top: `${position.top}px`, width: `${position.width}px` }}>
+      <div className="search-panel-head">
+        <strong>투숙 인원</strong>
+        <span>객실 1개 기준으로 빠르게 조정할 수 있습니다.</span>
+      </div>
       <div className="guest-panel-row">
         <div>
           <strong>성인</strong>

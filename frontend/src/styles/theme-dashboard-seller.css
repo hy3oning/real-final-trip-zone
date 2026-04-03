@@ -1,22 +1,4 @@
-/* ── Admin Role Colors ── */
-
-.dash-layout.is-admin {
-  --dash-accent: #2563eb;
-  --dash-accent-light: #93c5fd;
-  --dash-accent-strong: #1d4ed8;
-  --dash-shadow: rgba(37, 99, 235, 0.18);
-  --dash-active-bg: rgba(37, 99, 235, 0.06);
-  --dash-active-shadow: rgba(37, 99, 235, 0.08);
-  --dash-accent-border: rgba(37, 99, 235, 0.14);
-}
-
-.adminboard {
-  --ops-accent: #6aa7e4;
-  --ops-accent-strong: #2563eb;
-}
-
-/* ── Seller Role Colors ── */
-
+/* ── Seller Role Sidebar Colors ── */
 .dash-layout.is-seller {
   --dash-accent: #059669;
   --dash-accent-light: #6ee7b7;
@@ -27,7 +9,411 @@
   --dash-accent-border: rgba(5, 150, 105, 0.14);
 }
 
-.sellerboard {
-  --ops-accent: #4f8dd3;
-  --ops-accent-strong: #059669;
+/* ═══════════════════════════════════════════════════
+   SELLER DASHBOARD — COMPLETE VISUAL REDESIGN
+   Deep emerald dark theme — professional, not garish
+═══════════════════════════════════════════════════ */
+
+/* ── 1. Base container ── */
+.opsdash.is-seller {
+  background: linear-gradient(165deg, #091512 0%, #060f0d 100%);
+  min-height: 100%;
+}
+
+/* ── 2. Hero section ── */
+.opsdash.is-seller .opsdash-hero {
+  background: linear-gradient(160deg, rgba(9, 22, 19, 0.98) 0%, rgba(12, 28, 24, 0.96) 100%);
+  border: 1px solid rgba(5, 150, 105, 0.1);
+  border-radius: 28px;
+  margin-bottom: 16px;
+}
+
+/* ── 3. Spotlight — deep forest teal, NOT bright green ── */
+.opsdash.is-seller .opsdash-spotlight {
+  background: linear-gradient(160deg, rgba(4, 52, 38, 0.97) 0%, rgba(5, 72, 54, 0.9) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  box-shadow: 0 8px 32px rgba(4, 72, 54, 0.28), inset 0 1px 0 rgba(52, 211, 153, 0.1);
+}
+
+.opsdash.is-seller .opsdash-spotlight span {
+  color: rgba(167, 243, 208, 0.65);
+}
+
+.opsdash.is-seller .opsdash-spotlight strong {
+  color: #ecfdf5;
+  font-size: clamp(38px, 3.8vw, 52px);
+  letter-spacing: -0.08em;
+}
+
+.opsdash.is-seller .opsdash-spotlight p {
+  color: rgba(167, 243, 208, 0.58);
+  font-size: 13px;
+}
+
+/* ── 4. Aside card ── */
+.opsdash.is-seller .opsdash-aside-card {
+  background: rgba(12, 26, 22, 0.9);
+  border: 1px solid rgba(52, 211, 153, 0.1);
+}
+
+/* ── 5. Hero nav links ── */
+.opsdash.is-seller .opsdash-hero-nav-link {
+  background: rgba(12, 26, 22, 0.9);
+  border-color: rgba(52, 211, 153, 0.14);
+  color: #a7f3d0;
+}
+
+.opsdash.is-seller .opsdash-hero-nav-link:hover {
+  background: rgba(18, 38, 32, 0.96);
+  color: #d1fae5;
+  border-color: rgba(52, 211, 153, 0.22);
+}
+
+/* ── 6. Hero facts ── */
+.opsdash.is-seller .opsdash-hero-fact {
+  background: rgba(12, 26, 22, 0.88);
+  border: 1px solid rgba(52, 211, 153, 0.1);
+}
+
+.opsdash.is-seller .opsdash-hero-fact span {
+  color: rgba(167, 243, 208, 0.55);
+}
+
+.opsdash.is-seller .opsdash-hero-fact strong {
+  color: #d1fae5;
+}
+
+/* ── 7. Focus rows ── */
+.opsdash.is-seller .opsdash-focus-row {
+  background: rgba(12, 26, 22, 0.7);
+  border: 1px solid rgba(52, 211, 153, 0.08);
+  border-left: 3px solid rgba(52, 211, 153, 0.25);
+}
+
+.opsdash.is-seller .opsdash-focus-row::before {
+  display: none;
+}
+
+/* Row 1 — 체크인 대기 (teal) */
+.opsdash.is-seller .opsdash-focus-row:nth-child(1) {
+  background: rgba(4, 28, 22, 0.9);
+  border-color: rgba(5, 150, 105, 0.18);
+  border-left-color: rgba(5, 150, 105, 0.6);
+}
+
+/* Row 2 — 결제 확인 필요 (amber) */
+.opsdash.is-seller .opsdash-focus-row:nth-child(2) {
+  background: rgba(28, 22, 4, 0.88);
+  border-color: rgba(180, 130, 6, 0.16);
+  border-left-color: rgba(217, 119, 6, 0.52);
+}
+
+.opsdash.is-seller .opsdash-focus-row:hover {
+  background: rgba(18, 38, 32, 0.96);
+}
+
+/* ── 8. Metric strip ── */
+.opsdash.is-seller .opsdash-metric-card {
+  background: rgba(10, 22, 18, 0.92);
+  border: 1px solid rgba(52, 211, 153, 0.08);
+}
+
+/* Card 1 — 오늘 체크인 (primary teal) */
+.opsdash.is-seller .opsdash-metric-card:nth-child(1) {
+  background: rgba(4, 28, 22, 0.96);
+  border-color: rgba(5, 150, 105, 0.22);
+}
+.opsdash.is-seller .opsdash-metric-card:nth-child(1)::after {
+  background: linear-gradient(180deg, #059669, #34d399);
+  opacity: 0.8;
+}
+.opsdash.is-seller .opsdash-metric-card:nth-child(1) strong {
+  color: #6ee7b7;
+}
+
+/* Card 2 — 미답변 문의 (amber) */
+.opsdash.is-seller .opsdash-metric-card:nth-child(2) {
+  background: rgba(28, 20, 4, 0.95);
+  border-color: rgba(217, 119, 6, 0.2);
+}
+.opsdash.is-seller .opsdash-metric-card:nth-child(2)::after {
+  background: linear-gradient(180deg, #d97706, #fbbf24);
+  opacity: 0.8;
+}
+.opsdash.is-seller .opsdash-metric-card:nth-child(2) strong {
+  color: #fcd34d;
+}
+
+/* Cards 3-4 — neutral */
+.opsdash.is-seller .opsdash-metric-card:nth-child(3),
+.opsdash.is-seller .opsdash-metric-card:nth-child(4) {
+  background: rgba(10, 22, 18, 0.92);
+  border-color: rgba(52, 211, 153, 0.07);
+}
+.opsdash.is-seller .opsdash-metric-card:nth-child(3)::after,
+.opsdash.is-seller .opsdash-metric-card:nth-child(4)::after {
+  background: linear-gradient(180deg, #1a4a38, #2d6b55);
+  opacity: 0.65;
+}
+.opsdash.is-seller .opsdash-metric-card:nth-child(3) strong,
+.opsdash.is-seller .opsdash-metric-card:nth-child(4) strong {
+  color: #a7f3d0;
+}
+
+/* ── 9. Metric value / label ── */
+.opsdash.is-seller .opsdash-metric-value {
+  color: #ecfdf5;
+}
+.opsdash.is-seller .opsdash-metric-label {
+  color: rgba(167, 243, 208, 0.5);
+}
+
+/* ── 10. Panels ── */
+.opsdash.is-seller .opsdash-panel {
+  background: rgba(10, 22, 18, 0.9);
+  border: 1px solid rgba(52, 211, 153, 0.08);
+  border-radius: 28px;
+}
+
+.opsdash.is-seller .seller-panel-workboard {
+  border-color: rgba(5, 150, 105, 0.16);
+}
+
+/* ── 11. Mini cards ── */
+.seller-queue-glance .opsdash-mini-card {
+  background: rgba(10, 22, 18, 0.92);
+  border-top: 2px solid rgba(52, 211, 153, 0.18);
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+}
+.seller-queue-glance .opsdash-mini-card::after {
+  display: none;
+}
+
+.seller-queue-glance .opsdash-mini-card:nth-child(1) {
+  background: rgba(4, 28, 22, 0.95);
+  border-top-color: rgba(5, 150, 105, 0.55);
+}
+.seller-queue-glance .opsdash-mini-card:nth-child(1) strong {
+  color: #6ee7b7;
+}
+
+.seller-queue-glance .opsdash-mini-card:nth-child(2) {
+  background: rgba(28, 20, 4, 0.95);
+  border-top-color: rgba(217, 119, 6, 0.5);
+}
+.seller-queue-glance .opsdash-mini-card:nth-child(2) strong {
+  color: #fcd34d;
+}
+
+.seller-queue-glance .opsdash-mini-card:nth-child(3) {
+  border-top-color: rgba(52, 211, 153, 0.22);
+}
+.seller-queue-glance .opsdash-mini-card:nth-child(3) strong {
+  color: #a7f3d0;
+}
+
+/* ── 12. Stay summary ── */
+.seller-stay-summary {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.seller-stay-summary-item {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: rgba(4, 28, 22, 0.7);
+  border: 1px solid rgba(5, 150, 105, 0.1);
+}
+
+.seller-stay-summary-item.is-sand {
+  background: rgba(28, 20, 4, 0.65);
+  border-color: rgba(217, 119, 6, 0.1);
+}
+
+.seller-stay-summary-item span {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(167, 243, 208, 0.6);
+  white-space: nowrap;
+}
+
+.seller-stay-summary-item.is-sand span {
+  color: rgba(253, 211, 77, 0.6);
+}
+
+.seller-stay-summary-item strong {
+  font-size: 22px;
+  font-weight: 900;
+  color: #6ee7b7;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.seller-stay-summary-item.is-sand strong {
+  color: #fcd34d;
+}
+
+.seller-stay-summary-item .opsdash-track {
+  height: 4px;
+  background: rgba(52, 211, 153, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.seller-stay-summary-item .opsdash-fill {
+  background: linear-gradient(90deg, #065f46, #059669);
+  border-radius: 999px;
+}
+
+.seller-stay-summary-item.is-sand .opsdash-track {
+  background: rgba(217, 119, 6, 0.1);
+}
+
+.seller-stay-summary-item.is-sand .opsdash-fill {
+  background: linear-gradient(90deg, #92400e, #d97706);
+}
+
+/* ── 13. Checklist ── */
+.seller-inline-routine {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(52, 211, 153, 0.08);
+}
+
+.opsdash.is-seller .opsdash-check-row {
+  border-top-color: rgba(52, 211, 153, 0.08);
+}
+
+.opsdash.is-seller .opsdash-check-row span {
+  background: rgba(5, 150, 105, 0.25);
+  border-color: rgba(52, 211, 153, 0.2);
+}
+
+/* ── 14. Trend bars ── */
+.opsdash.is-seller .opsdash-trend-row .opsdash-fill {
+  background: linear-gradient(90deg, #065f46, #059669);
+}
+
+.opsdash.is-seller .opsdash-fill {
+  background: linear-gradient(90deg, #065f46, #059669);
+}
+
+/* ── 15. Stay rows ── */
+.opsdash.is-seller .opsdash-stay-row {
+  background: rgba(10, 22, 18, 0.7);
+  border-bottom: 1px solid rgba(52, 211, 153, 0.06);
+}
+
+.opsdash.is-seller .opsdash-stay-row:hover {
+  background: rgba(18, 38, 32, 0.92);
+}
+
+.opsdash.is-seller .opsdash-stay-main span {
+  color: rgba(167, 243, 208, 0.55);
+}
+
+.opsdash.is-seller .opsdash-stay-main strong {
+  color: #a7f3d0;
+}
+
+/* ── 16. Link rows ── */
+.opsdash.is-seller .opsdash-link-row {
+  background: rgba(10, 22, 18, 0.65);
+  border: 1px solid rgba(52, 211, 153, 0.07);
+}
+
+.opsdash.is-seller .opsdash-link-row:hover {
+  background: rgba(18, 38, 32, 0.92);
+  transform: translateX(2px);
+  border-color: rgba(52, 211, 153, 0.14);
+}
+
+.opsdash.is-seller .opsdash-link-arrow {
+  color: rgba(52, 211, 153, 0.45);
+}
+
+.opsdash.is-seller .opsdash-link-copy strong {
+  color: #a7f3d0;
+}
+
+/* ── 17. Typography hierarchy ── */
+.opsdash.is-seller .opsdash-hero-copy h1 {
+  color: #f0fdf4;
+}
+
+.opsdash.is-seller .opsdash-hero-copy p:last-child {
+  color: rgba(167, 243, 208, 0.62);
+}
+
+.opsdash.is-seller .opsdash-hero-copy .eyebrow {
+  color: rgba(52, 211, 153, 0.65);
+  letter-spacing: 0.12em;
+}
+
+.opsdash.is-seller .opsdash-section-head h2 {
+  color: #ecfdf5;
+}
+
+.opsdash.is-seller .opsdash-section-head > div > span:first-child {
+  color: rgba(52, 211, 153, 0.5);
+  letter-spacing: 0.14em;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.opsdash.is-seller .opsdash-board-head strong {
+  color: #a7f3d0;
+}
+
+.opsdash.is-seller .opsdash-board-head span {
+  color: rgba(167, 243, 208, 0.48);
+}
+
+.opsdash.is-seller .opsdash-board-head strong::before {
+  background: linear-gradient(180deg, #059669, #34d399);
+}
+
+/* ── 18. Row arrow ── */
+.opsdash.is-seller .opsdash-row-arrow {
+  color: rgba(52, 211, 153, 0.5);
+  background: rgba(5, 150, 105, 0.08);
+  border-color: rgba(52, 211, 153, 0.12);
+}
+
+/* ── 19. Focus row text ── */
+.opsdash.is-seller .opsdash-focus-main strong {
+  color: #a7f3d0;
+}
+
+.opsdash.is-seller .opsdash-focus-main p {
+  color: rgba(167, 243, 208, 0.5);
+}
+
+/* ── 20. Layout grids ── */
+.seller-top-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.seller-board-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.5fr);
+  gap: 20px;
+}
+
+@media (max-width: 960px) {
+  .seller-top-grid,
+  .seller-board-grid {
+    grid-template-columns: 1fr;
+  }
 }

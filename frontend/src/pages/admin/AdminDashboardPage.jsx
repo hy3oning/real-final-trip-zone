@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import {
+  DashboardChecklist,
   DashboardFactGrid,
   DashboardFocusList,
+  DashboardHero,
+  DashboardLinkList,
   DashboardMetricStrip,
   DashboardMixList,
   DashboardPanel,
@@ -81,12 +84,35 @@ export default function AdminDashboardPage() {
               : "상태 보기"
           : "문의 처리",
     }));
+  const adminMiniCards = [
+    { label: "승인 대기", value: vm.metrics[2]?.value ?? "00" },
+    { label: "미답변 문의", value: vm.metrics[3]?.value ?? "00" },
+    { label: "위험 회원", value: vm.facts[0]?.value ?? "00" },
+  ];
+  const adminQuickLinks = vm.header.links.map((item) => ({
+    ...item,
+    title: item.label,
+    subtitle: "운영 화면 바로 이동",
+  }));
 
   return (
     <DashboardLayout role="admin">
-      <div className="opsdash is-admin">
+      <div className="opsdash is-admin admin-atlas">
         {isLoading ? <div className="my-empty-inline">관리자 대시보드를 불러오는 중입니다.</div> : null}
         {notice ? <div className="my-empty-inline">{notice}</div> : null}
+        <DashboardHero
+          compact
+          eyebrow={vm.header.eyebrow}
+          title="오늘 운영 판단 보드"
+          description="승인, 제재, 문의 응답 우선순위를 먼저 분리해서 운영 결정을 빠르게 내리게 구성했습니다."
+          links={vm.header.links}
+          facts={vm.header.facts}
+          spotlight={vm.header.spotlight}
+          insightTitle="즉시 판단이 필요한 항목"
+          insightRows={priorityRows}
+          ariaLabel="관리자 빠른 이동"
+        />
+
         <div className="admin-top-grid">
           <DashboardPanel
             eyebrow="Priority Queue"
@@ -98,6 +124,14 @@ export default function AdminDashboardPage() {
               <div className="opsdash-board-head">
                 <strong>승인 · 문의 · 제재 우선 큐</strong>
                 <span>첫 화면에서 바로 판단하고 이동</span>
+              </div>
+              <div className="opsdash-mini-grid admin-queue-glance">
+                {adminMiniCards.map((item) => (
+                  <article key={item.label} className="opsdash-mini-card">
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </article>
+                ))}
               </div>
               <DashboardFocusList rows={priorityRows} compact />
             </div>
@@ -120,6 +154,25 @@ export default function AdminDashboardPage() {
         </div>
 
         <DashboardMetricStrip items={vm.metrics.slice(0, 4)} label="관리자 핵심 지표" className="admin-metric-strip" />
+
+        <DashboardPanel eyebrow="Routine" title="운영 루틴과 바로 가기" className="admin-panel-links">
+          <div className="opsdash-board-grid admin-board-grid">
+            <div className="opsdash-board-section">
+              <div className="opsdash-board-head">
+                <strong>오늘의 체크리스트</strong>
+                <span>운영 기본 점검</span>
+              </div>
+              <DashboardChecklist items={vm.checklist.slice(0, 4)} />
+            </div>
+            <div className="opsdash-board-section">
+              <div className="opsdash-board-head">
+                <strong>자주 여는 운영 메뉴</strong>
+                <span>권한별 빠른 이동</span>
+              </div>
+              <DashboardLinkList items={adminQuickLinks} compact />
+            </div>
+          </div>
+        </DashboardPanel>
 
         <DashboardPanel eyebrow="Insights" title="예약 흐름과 상위 성과" className="admin-panel-board">
           <div className="opsdash-board-grid admin-board-grid">

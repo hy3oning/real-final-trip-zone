@@ -4,7 +4,7 @@ import { homeSearchDefaults } from "../../data/homeData";
 import { lodgingSortOptions } from "../../data/lodgingData";
 import { DateRangePopover, GuestPopover, SuggestionsPanel } from "../../features/lodging-list/LodgingSearchPanels";
 import { LodgingListToolbar } from "../../features/lodging-list/LodgingListToolbar";
-import { LodgingResultsLayout } from "../../features/lodging-list/LodgingResultsLayout";
+import { LodgingResultsLayout, LodgingMapPanel } from "../../features/lodging-list/LodgingResultsLayout";
 import {
   buildOptionCounts,
   buildSuggestionItems,
@@ -30,6 +30,8 @@ export default function LodgingListPage() {
   const [mapInstance, setMapInstance] = useState(null);
   const [lodgings, setLodgings] = useState(cachedLodgings);
   const [searchSuggestionItems, setSearchSuggestionItems] = useState([]);
+  const [loadState, setLoadState] = useState(cachedLodgings.length ? "ready" : "loading");
+  const [loadError, setLoadError] = useState("");
   const filters = parseLodgingSearchState(searchParams, homeSearchDefaults);
   const keyword = filters.keyword;
   const checkIn = filters.checkIn;
@@ -56,7 +58,12 @@ export default function LodgingListPage() {
   });
   const [activePanel, setActivePanel] = useState(null);
   const [activeFilterMenu, setActiveFilterMenu] = useState(null);
-  const [visibleMonth, setVisibleMonth] = useState(parseISO(checkIn) ?? new Date());
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const parsed = parseISO(checkIn);
+    return parsed && parsed >= today ? parsed : today;
+  });
   const filterSummary = buildFilterSummary(filters, lodgingSortOptions);
 
   useEffect(() => {
@@ -64,13 +71,19 @@ export default function LodgingListPage() {
 
     async function loadLodgingData() {
       try {
+        setLoadState((current) => (lodgings.length ? current : "loading"));
+        setLoadError("");
         const nextLodgings = await getLodgings();
         const nextSuggestions = await getSearchSuggestionItems(nextLodgings);
         if (cancelled) return;
         setLodgings(nextLodgings);
         setSearchSuggestionItems(nextSuggestions);
+        setLoadState("ready");
       } catch (error) {
+        if (cancelled) return;
         console.error("Failed to load lodging list data.", error);
+        setLoadError("숙소 목록을 불러오지 못했습니다.");
+        setLoadState("error");
       }
     }
 
@@ -103,8 +116,8 @@ export default function LodgingListPage() {
   }, [filters, maxPrice, minPrice]);
 
   const [activeLodgingId, setActiveLodgingId] = useState(null);
-  const selectedLodging = filteredLodgings.find((item) => item.id === activeLodgingId) ?? filteredLodgings[0] ?? null;
-  const activeFilterCount = filterSummary.length + (availableOnly ? 1 : 0);
+  const selectedLodging = filteredLodgings.find((item) => item.id === activeLodgingId) ?? null;
+  const activeFilterCount = filterSummary.length;
 
   useEffect(() => {
     setSearchForm({ keyword, checkIn, checkOut, guests });
@@ -134,10 +147,11 @@ export default function LodgingListPage() {
     }
 
     setActiveLodgingId((current) => {
-      if (current && filteredLodgings.some((lodging) => lodging.id === current)) {
+      if (!current) return null;
+      if (filteredLodgings.some((lodging) => lodging.id === current)) {
         return current;
       }
-      return filteredLodgings[0]?.id ?? null;
+      return null;
     });
   }, [filteredLodgings]);
 
@@ -193,6 +207,10 @@ export default function LodgingListPage() {
   };
 
   const handleDatePick = (day) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (day < today) return;
+
     const picked = toISO(day);
     if (!searchForm.checkIn || searchForm.checkOut) {
       setSearchForm((current) => ({ ...current, checkIn: picked, checkOut: "" }));
@@ -229,12 +247,22 @@ export default function LodgingListPage() {
     focusLodging(nextId);
   };
 
+  const resetSearch = () => {
+    setSearchParams(new URLSearchParams());
+    setActiveFilterMenu(null);
+    setActivePanel(null);
+  };
+
+  const selectedLodgingSummary = selectedLodging
+    ? `${selectedLodging.region} · ${selectedLodging.district} · ${selectedLodging.price}`
+    : "조건에 맞는 숙소를 정리하고 있어요.";
+
   return (
     <div className="container list-page">
       <section className="list-hero">
         <div>
           <p className="eyebrow">숙소 검색</p>
-          <h1>{keyword ? `${keyword} 주변 숙소 ${filteredLodgings.length}곳` : `지금 예약 가능한 숙소 ${filteredLodgings.length}곳`}</h1>
+          <h1>{keyword ? `${keyword} 주변 숙소` : "지금 예약 가능한 숙소"}</h1>
           <p>
             {formatDateSummary(checkIn, checkOut)} · 성인 {guests}명
             {activeFilterCount ? ` · 필터 ${activeFilterCount}개 적용 중` : " · 전체 조건 보기"}
@@ -242,8 +270,8 @@ export default function LodgingListPage() {
         </div>
         <div className="list-hero-meta">
           <div className="list-hero-stat">
-            <span>선택 숙소</span>
-            <strong>{selectedLodging?.name ?? "추천 숙소 준비 중"}</strong>
+            <span>{selectedLodging ? "선택 숙소" : "전체"}</span>
+            <strong>{selectedLodging?.name ?? "가격 · 후기 · 위치 중심 비교"}</strong>
           </div>
           <div className="list-hero-stat">
             <span>정렬</span>
@@ -252,7 +280,7 @@ export default function LodgingListPage() {
         </div>
       </section>
 
-      <form ref={searchShellRef} className="list-search-bar list-search-bar-showcase" onSubmit={handleSearchSubmit}>
+      <form ref={searchShellRef} className="list-search-bar list-search-bar-showcase list-search-bar-wide" onSubmit={handleSearchSubmit}>
         <div className="list-search-ambient" aria-hidden="true">
           <span className="list-search-accent list-search-accent-warm" />
           <span className="list-search-accent list-search-accent-cool" />
@@ -331,60 +359,93 @@ export default function LodgingListPage() {
         onClose={() => setActivePanel(null)}
       />
 
-      <LodgingListToolbar
-        toolbarRef={toolbarRef}
-        activeFilterMenu={activeFilterMenu}
-        setActiveFilterMenu={setActiveFilterMenu}
-        filterSummary={filterSummary}
-        updateParams={updateParams}
-        availableOnly={availableOnly}
-        optionCounts={optionCounts}
-        type={type}
-        features={features}
-        priceBand={priceBand}
-        regionFilter={regionFilter}
-        tastes={tastes}
-        discounts={discounts}
-        grades={grades}
-        facilities={facilities}
-        toggleQueryValue={toggleQueryValue}
-        lodgingSortOptions={lodgingSortOptions}
-        sort={sort}
-      />
+      <div className="list-body-grid">
+        <div className="list-body-main">
+          <LodgingListToolbar
+            toolbarRef={toolbarRef}
+            activeFilterMenu={activeFilterMenu}
+            setActiveFilterMenu={setActiveFilterMenu}
+            filterSummary={filterSummary}
+            updateParams={updateParams}
+            availableOnly={availableOnly}
+            optionCounts={optionCounts}
+            type={type}
+            features={features}
+            priceBand={priceBand}
+            regionFilter={regionFilter}
+            tastes={tastes}
+            discounts={discounts}
+            grades={grades}
+            facilities={facilities}
+            toggleQueryValue={toggleQueryValue}
+            lodgingSortOptions={lodgingSortOptions}
+            sort={sort}
+          />
 
-      <div className="list-results-head" aria-live="polite">
-        <strong>선택 숙소: {selectedLodging?.name ?? "추천 숙소 준비 중"}</strong>
-        <span>
-          {selectedLodging
-            ? `${selectedLodging.region} · ${selectedLodging.district} · ${selectedLodging.price}`
-            : "조건에 맞는 숙소를 정리하고 있어요."}
-        </span>
-      </div>
-
-      {!lodgings.length ? (
-        <section className="lodging-results">
-          <div className="lodging-results-skeleton" aria-hidden="true">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="lodging-skeleton-card">
-                <div className="lodging-skeleton-visual" />
-                <div className="lodging-skeleton-line lodging-skeleton-line-title" />
-                <div className="lodging-skeleton-line" />
-                <div className="lodging-skeleton-line lodging-skeleton-line-short" />
-                <div className="lodging-skeleton-price" />
+          {selectedLodging && (
+            <div className="list-results-head" aria-live="polite">
+              <div className="list-results-head-copy">
+                <span className="list-results-label">선택 숙소</span>
+                <strong>{selectedLodging.name}</strong>
               </div>
-            ))}
-          </div>
-        </section>
-      ) : (
-        <LodgingResultsLayout
+              <span>{selectedLodgingSummary}</span>
+            </div>
+          )}
+
+          {loadState === "loading" ? (
+            <section className="lodging-results">
+              <div className="lodging-results lodging-results-grid-skeleton" aria-hidden="true">
+                <div className="lodging-results-skeleton">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="lodging-skeleton-card">
+                      <div className="lodging-skeleton-visual" />
+                      <div className="lodging-skeleton-line lodging-skeleton-line-title" />
+                      <div className="lodging-skeleton-line" />
+                      <div className="lodging-skeleton-line lodging-skeleton-line-short" />
+                      <div className="lodging-skeleton-price" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : loadState === "error" ? (
+            <section className="lodging-results">
+              <div className="list-empty-state list-empty-state-full list-empty-state-action">
+                <strong>숙소 목록을 다시 불러와 주세요.</strong>
+                <p>{loadError}</p>
+                <button type="button" className="secondary-button" onClick={() => window.location.reload()}>
+                  다시 시도
+                </button>
+              </div>
+            </section>
+          ) : !filteredLodgings.length ? (
+            <section className="lodging-results">
+              <div className="list-empty-state list-empty-state-full list-empty-state-action">
+                <strong>조건을 조금 넓혀보세요.</strong>
+                <p>지역, 가격대, 숙소 유형 중 한두 개만 먼저 풀면 더 좋은 숙소를 바로 비교할 수 있습니다.</p>
+                <button type="button" className="secondary-button" onClick={resetSearch}>
+                  전체 조건 다시 보기
+                </button>
+              </div>
+            </section>
+          ) : (
+            <LodgingResultsLayout
+              filteredLodgings={filteredLodgings}
+              activeLodgingId={activeLodgingId}
+              focusLodging={focusLodging}
+              handleListPointer={handleListPointer}
+            />
+          )}
+        </div>
+
+        <LodgingMapPanel
           filteredLodgings={filteredLodgings}
           activeLodgingId={activeLodgingId}
           focusLodging={focusLodging}
-          handleListPointer={handleListPointer}
           mapInstance={mapInstance}
           setMapInstance={setMapInstance}
         />
-      )}
+      </div>
     </div>
   );
 }

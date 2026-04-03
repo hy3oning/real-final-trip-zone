@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import {
+  DashboardChecklist,
   DashboardFocusList,
+  DashboardHero,
   DashboardLinkList,
   DashboardMetricStrip,
   DashboardPanel,
@@ -70,12 +72,30 @@ export default function SellerDashboardPage() {
           ? "체크인 준비"
           : "취소 확인",
   }));
+  const sellerMiniCards = [
+    { label: "오늘 체크인", value: vm.metrics[0]?.value ?? "00" },
+    { label: "답변 대기", value: vm.metrics[1]?.value ?? "00" },
+    { label: "운영 숙소", value: `${activeLodgings}곳` },
+  ];
 
   return (
     <DashboardLayout role="seller">
-      <div className="opsdash is-seller">
+      <div className="opsdash is-seller seller-atlas">
         {isLoading ? <div className="my-empty-inline">판매자 대시보드를 불러오는 중입니다.</div> : null}
         {notice ? <div className="my-empty-inline">{notice}</div> : null}
+        <DashboardHero
+          compact
+          eyebrow={vm.header.eyebrow}
+          title="오늘 운영 우선순위"
+          description="체크인, 문의, 판매 가능 객실 상태를 한 화면에서 끊김 없이 정리합니다."
+          links={vm.header.links}
+          facts={vm.header.facts}
+          spotlight={vm.header.spotlight}
+          insightTitle="지금 먼저 볼 예약"
+          insightRows={priorityRows}
+          ariaLabel="판매자 빠른 이동"
+        />
+
         <div className="seller-top-grid">
           <DashboardPanel
             eyebrow="Today First"
@@ -88,7 +108,18 @@ export default function SellerDashboardPage() {
                 <strong>체크인과 결제 확인</strong>
                 <span>오늘 예약 우선 처리</span>
               </div>
+              <div className="opsdash-mini-grid seller-queue-glance">
+                {sellerMiniCards.map((item) => (
+                  <article key={item.label} className="opsdash-mini-card">
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </article>
+                ))}
+              </div>
               <DashboardFocusList rows={priorityRows} compact />
+              <div className="seller-inline-routine">
+                <DashboardChecklist items={vm.checklist.slice(0, 3)} />
+              </div>
             </div>
           </DashboardPanel>
 

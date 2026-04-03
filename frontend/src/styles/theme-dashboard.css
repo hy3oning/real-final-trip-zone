@@ -6167,6 +6167,20 @@ ul {
   gap: 8px;
 }
 
+.admin-panel-links .opsdash-board-grid {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: stretch;
+}
+
+.admin-panel-links .opsdash-board-section {
+  height: 100%;
+  align-content: start;
+  padding: 16px;
+  border: 1px solid rgba(23, 36, 51, 0.07);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
 .seller-panel-stays .opsdash-stay-main strong {
   font-size: 14px;
 }

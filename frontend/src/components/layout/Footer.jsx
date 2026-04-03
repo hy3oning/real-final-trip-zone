@@ -16,7 +16,11 @@ export default function Footer() {
                 <span className="brand-sub">stay and travel</span>
               </span>
             </Link>
-            <p>국내 숙소 탐색부터 예약, 결제, 문의까지 이어지는 여행 예약 서비스</p>
+            <p>국내 프리미엄 스테이를 빠르게 탐색하고, 일정에 맞춰 바로 예약하는 여행 예약 서비스</p>
+            <div className="footer-service-note">
+              <span>예약 상담 09:00 - 23:00</span>
+              <span>당일 예약 · 일정 변경 지원</span>
+            </div>
           </div>
           <div className="footer-link-grid">
             <div className="footer-link-block">
@@ -32,23 +36,24 @@ export default function Footer() {
               <Link to="/signup">회원가입</Link>
             </div>
             <div className="footer-link-block">
-              <strong>운영</strong>
-              <Link to="/docs">문서 허브</Link>
-              <Link to="/submission-html/presentation/index.html">발표 자료</Link>
+              <strong>호스트</strong>
+              <Link to="/seller">호스트 센터</Link>
+              <Link to="/seller/rooms">숙소 등록</Link>
+              <Link to="/seller/reservations">예약 운영</Link>
             </div>
           </div>
         </div>
         <div className="footer-bottomline">
-          <div className="footer-policy-links">
-            <Link to="/docs">회사소개</Link>
-            <Link to="/docs">이용약관</Link>
-            <Link to="/docs">개인정보처리방침</Link>
-            <Link to="/docs">전자금융거래 이용약관</Link>
+          <div className="footer-policy-links" aria-label="서비스 안내">
+            <span>TripZone 서비스 안내</span>
+            <span>이용약관</span>
+            <span>개인정보처리방침</span>
+            <span>전자금융거래 이용약관</span>
           </div>
           <div className="footer-meta-group">
-            <span>고객 지원 09:00 - 18:00</span>
+            <span>고객센터 1670-2048</span>
             <span>예약 변경 · 결제 문의</span>
-            <span>사업자 제휴 문의</span>
+            <span>호스트 제휴 문의 host@tripzone.kr</span>
           </div>
         </div>
       </div>

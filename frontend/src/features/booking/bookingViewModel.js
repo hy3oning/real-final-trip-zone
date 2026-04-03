@@ -22,7 +22,7 @@ function resolveBookingDates(searchParams) {
   const rawCheckOut = parseISO(searchParams.get("checkOut"));
   const checkInDate = rawCheckIn && rawCheckIn.getTime() >= today.getTime() ? rawCheckIn : defaultCheckIn;
   const minimumCheckOut = addDays(checkInDate, 1);
-  const checkOutDate = rawCheckOut && rawCheckOut.getTime() > checkInDate.getTime() ? rawCheckOut : addDays(checkInDate, 2);
+  const checkOutDate = rawCheckOut && rawCheckOut.getTime() > checkInDate.getTime() ? rawCheckOut : addDays(checkInDate, 1);
 
   return {
     checkIn: toISO(checkInDate),

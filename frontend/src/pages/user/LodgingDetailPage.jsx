@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StayMap from "../../components/common/StayMap";
 import { readAuthSession } from "../../utils/authSession";
 import { ReviewSection, RoomOptionsSection, StickyBookingCard } from "../../features/lodging-detail/LodgingDetailSections";
@@ -10,7 +10,7 @@ import {
   getReviewAverage,
 } from "../../features/lodging-detail/lodgingDetailViewModel";
 import { buildGalleryImages, getRoomMeta } from "../../features/lodging-detail/lodgingDetailUtils";
-import { createLodgingReview, getLodgingDetailById, getLodgingReviews, uploadLodgingReviewImages } from "../../services/lodgingService";
+import { createLodgingReview, getLodgingById, getLodgingDetailById, getLodgingReviews, uploadLodgingReviewImages } from "../../services/lodgingService";
 import { getMyBookings, getMyWishlist, toggleMyWishlist } from "../../services/mypageService";
 import {
   findMyInquiryRoomByLodgingId,
@@ -62,7 +62,20 @@ export default function LodgingDetailPage() {
   const { lodgingId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const bookingDateSuffix = (() => {
+    const parts = [];
+    const checkIn = searchParams.get("checkIn");
+    const checkOut = searchParams.get("checkOut");
+    const guests = searchParams.get("guests");
+    if (checkIn) parts.push(`checkIn=${checkIn}`);
+    if (checkOut) parts.push(`checkOut=${checkOut}`);
+    if (guests) parts.push(`guests=${guests}`);
+    return parts.length ? `?${parts.join("&")}` : "";
+  })();
   const [lodging, setLodging] = useState(null);
+  const [isLodgingLoading, setIsLodgingLoading] = useState(true);
+  const [lodgingLoadError, setLodgingLoadError] = useState("");
   const [myBookingRows, setMyBookingRows] = useState([]);
   const roomOptions = useMemo(() => (lodging ? buildRoomOptions(lodging) : []), [lodging]);
   const propertyStory = useMemo(() => (lodging ? buildPropertyStory(lodging) : []), [lodging]);
@@ -97,6 +110,21 @@ export default function LodgingDetailPage() {
     [authSession, lodging?.id, myBookingRows],
   );
 
+  const loadLodgingWithTimeout = async (requestPromise, timeoutMessage) => {
+    let timerId;
+
+    try {
+      return await Promise.race([
+        requestPromise,
+        new Promise((_, reject) => {
+          timerId = window.setTimeout(() => reject(new Error(timeoutMessage)), 8000);
+        }),
+      ]);
+    } finally {
+      window.clearTimeout(timerId);
+    }
+  };
+
   const getChatBubbleTone = (sender) => {
     if (sender === "회원" || sender === "guest" || sender === "USER") return "guest";
     return "seller";
@@ -115,12 +143,36 @@ export default function LodgingDetailPage() {
     let cancelled = false;
 
     async function loadLodging() {
+      setIsLodgingLoading(true);
+      setLodgingLoadError("");
+
       try {
-        const nextLodging = await getLodgingDetailById(lodgingId);
+        const nextLodging = await loadLodgingWithTimeout(
+          getLodgingDetailById(lodgingId),
+          "숙소 상세 응답이 지연되고 있습니다.",
+        );
         if (cancelled) return;
         setLodging(nextLodging);
       } catch (error) {
         console.error("Failed to load lodging detail.", error);
+        try {
+          const fallbackLodging = await loadLodgingWithTimeout(
+            getLodgingById(lodgingId),
+            "숙소 기본 정보 응답도 지연되고 있습니다.",
+          );
+          if (cancelled) return;
+          setLodging(fallbackLodging);
+          setLodgingLoadError("일부 상세 정보가 지연되어 기본 숙소 정보만 먼저 표시합니다.");
+        } catch (fallbackError) {
+          if (cancelled) return;
+          console.error("Failed to load fallback lodging detail.", fallbackError);
+          setLodging(null);
+          setLodgingLoadError("숙소 상세 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLodgingLoading(false);
+        }
       }
     }
 
@@ -434,11 +486,25 @@ export default function LodgingDetailPage() {
   };
 
   if (!lodging) {
+    if (isLodgingLoading) {
+      return (
+        <div className="container page-stack">
+          <section className="list-empty-state list-empty-state-full">
+            <strong>숙소 정보를 가져오고 있어요.</strong>
+            <p>잠시만 기다려주세요.</p>
+          </section>
+        </div>
+      );
+    }
+
     return (
       <div className="container page-stack">
         <section className="list-empty-state list-empty-state-full">
-          <strong>숙소 상세를 불러오는 중입니다.</strong>
-          <p>백엔드에서 숙소와 객실 정보를 가져오고 있어요.</p>
+          <strong>숙소 상세 정보를 불러오지 못했습니다.</strong>
+          <p>{lodgingLoadError || "요청이 지연되거나 응답 형식이 올바르지 않습니다."}</p>
+          <Link className="primary-button" to="/lodgings">
+            다른 숙소 보러가기
+          </Link>
         </section>
       </div>
     );
@@ -448,6 +514,13 @@ export default function LodgingDetailPage() {
 
   return (
     <div className="container page-stack">
+      {lodgingLoadError ? (
+        <section className="list-empty-state" role="status" aria-live="polite">
+          <strong>일부 상세 정보를 불러오지 못했습니다.</strong>
+          <p>{lodgingLoadError}</p>
+        </section>
+      ) : null}
+
       <section className="lodging-hero">
         <div className="lodging-hero-visual" style={{ backgroundImage: `url(${selectedImage})` }} />
         <div className="lodging-hero-copy">
@@ -463,7 +536,7 @@ export default function LodgingDetailPage() {
             >
               ★ {lodging.rating} · {lodging.reviewCount}
             </button>
-            <span>{lodging.cancellation}</span>
+            <span>{lodging.type}</span>
           </div>
           <div className="feature-chip-row">
             {lodging.highlights.map((item) => (
@@ -473,7 +546,7 @@ export default function LodgingDetailPage() {
             ))}
           </div>
           <div className="hero-actions">
-            <Link className="primary-button" to={`/booking/${lodging.id}`}>
+            <Link className="primary-button" to={`/booking/${lodging.id}${bookingDateSuffix}`}>
               예약하기
             </Link>
             <button
@@ -506,22 +579,41 @@ export default function LodgingDetailPage() {
         ))}
       </div>
       <div className="detail-photo-meta">
-        <strong>숙소 사진 {photoIndex}</strong>
-        <span>{selectedRoom ? `${selectedRoom.name} 기준 객실/공용 공간 이미지를 먼저 확인하세요.` : "대표 숙소 이미지를 먼저 확인하세요."}</span>
+        <strong>{photoIndex} / {galleryImages.length}</strong>
+        <span>{selectedRoom ? `${selectedRoom.name} 객실 이미지` : lodging.name}</span>
       </div>
 
       <section className="detail-grid">
         <section className="detail-main">
-          <div className="detail-headline">
-            <span className="small-label">숙소 정보</span>
-            <h2>{lodging.region} · {lodging.type}</h2>
-            <p>{lodging.address}</p>
+          <div className="detail-overview-stage">
+            <div className="detail-headline detail-headline-editorial">
+              <span className="small-label">숙소 개요</span>
+              <h2>{lodging.name}</h2>
+              <p>{lodging.address} · 위치, 객실 구성, 체크인 흐름을 한 화면에서 바로 판단할 수 있게 정리했습니다.</p>
+            </div>
+            <div className="detail-overview-copy">
+              <p className="detail-overview-lead">{propertyStory[0] ?? lodging.intro}</p>
+              <div className="detail-overview-inline">
+                <div>
+                  <span>추천 이유</span>
+                  <strong>{lodging.highlights[1] ?? lodging.highlights[0] ?? "위치와 동선이 편한 숙소"}</strong>
+                </div>
+                <div>
+                  <span>예약 포인트</span>
+                  <strong>{selectedRoom ? `${selectedRoom.price}부터` : "객실 확인 필요"}</strong>
+                </div>
+                <div>
+                  <span>호스트 응답</span>
+                  <strong>{sellerContact.badge}</strong>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="detail-info-rail">
             <div className="detail-info-item">
               <strong>평점</strong>
-              <p>★ {lodging.rating} · {lodging.reviewCount}</p>
+              <p className="detail-info-rating-value">★ {lodging.rating} · {lodging.reviewCount}</p>
             </div>
             <div className="detail-info-item">
               <strong>체크인</strong>
@@ -544,40 +636,41 @@ export default function LodgingDetailPage() {
               <span className="small-label">숙소 소개</span>
             </div>
             <div className="detail-story">
-              {propertyStory.map((line) => (
-                <p key={line}>{line}</p>
+              {propertyStory.map((line, i) => (
+                <p key={i}>{line}</p>
               ))}
             </div>
           </section>
 
           <section className="detail-review-section">
             <div className="detail-headline">
-              <span className="small-label">기본 정보</span>
-              <h2>이용 안내</h2>
+              <span className="small-label">이용 가이드</span>
+              <h2>예약 전에 보면 좋은 운영 정보</h2>
+              <p>현장에서 다시 확인하지 않도록 자주 묻는 조건만 추려서 정리했습니다.</p>
             </div>
             <div className="detail-guide-list">
               <div className="detail-guide-item">
-                <strong>기본 정보</strong>
+                <strong>체크인 기본 정보</strong>
                 <ul className="detail-guide-bullets">
-                  <li>{lodging.checkInTime} 체크인 · {lodging.checkOutTime} 체크아웃</li>
+                  <li>체크인 {lodging.checkInTime} · 체크아웃 {lodging.checkOutTime}</li>
                   <li>{lodging.room}</li>
                   <li>{lodging.type}</li>
                 </ul>
               </div>
               <div className="detail-guide-item">
-                <strong>투숙객 혜택</strong>
+                <strong>예약 진행 포인트</strong>
                 <ul className="detail-guide-bullets">
-                  {lodging.highlights.slice(0, 3).map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
+                  <li>{lodging.status === "ACTIVE" ? "즉시 예약 확정" : "예약 후 호스트 확인 필요"}</li>
+                  <li>무료 취소 가능 여부는 객실별 정책을 확인하세요.</li>
+                  <li>반려동물 동반 여부는 호스트에게 문의하세요.</li>
                 </ul>
               </div>
               <div className="detail-guide-item">
-                <strong>확인 사항</strong>
+                <strong>현장 체크 메모</strong>
                 <ul className="detail-guide-bullets">
-                  <li>{lodging.cancellation}</li>
-                  <li>{lodging.benefit}</li>
-                  <li>객실별 취소 규정과 포함 혜택을 확인하세요.</li>
+                  <li>취소 정책은 예약 단계에서 객실별로 확인할 수 있습니다.</li>
+                  <li>체크인 당일 취소 시 환불이 제한될 수 있습니다.</li>
+                  <li>추가 인원 요금은 숙소에 따라 별도 청구될 수 있습니다.</li>
                 </ul>
               </div>
             </div>
@@ -609,7 +702,7 @@ export default function LodgingDetailPage() {
           </section>
         </section>
 
-        <StickyBookingCard lodging={lodging} selectedRoom={selectedRoom} roomBaseMeta={roomBaseMeta} />
+        <StickyBookingCard lodging={lodging} selectedRoom={selectedRoom} roomBaseMeta={roomBaseMeta} bookingDateSuffix={bookingDateSuffix} />
       </section>
 
       {isInquiryOpen && (

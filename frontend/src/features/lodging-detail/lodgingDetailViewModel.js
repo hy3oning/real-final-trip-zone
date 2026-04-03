@@ -36,7 +36,10 @@ export function buildPropertyStory(lodging) {
     ],
   };
 
-  return stories[lodging.id] ?? [lodging.intro, lodging.review, `${lodging.benefit} ${lodging.highlights.slice(0, 2).join(" · ")}`];
+  return stories[lodging.id] ?? [
+    lodging.intro,
+    `${lodging.region} ${lodging.district} 위치의 ${lodging.type}으로, ${lodging.checkInTime} 체크인 · ${lodging.checkOutTime} 체크아웃이 가능합니다.`,
+  ];
 }
 
 export function buildRoomOptions(lodging) {

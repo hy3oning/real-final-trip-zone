@@ -14,6 +14,8 @@ import {
 
 function CalendarMonth({ baseDate, startDate, endDate, onPick, controls = null }) {
   const days = monthGrid(baseDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   return (
     <div className="calendar-month">
@@ -34,6 +36,7 @@ function CalendarMonth({ baseDate, startDate, endDate, onPick, controls = null }
           const isStart = sameDate(day, startDate);
           const isEnd = sameDate(day, endDate);
           const isBetween = betweenDate(day, startDate, endDate);
+          const isPast = day < today;
 
           if (!isCurrentMonth) {
             return <span key={toISO(day)} className="calendar-day-placeholder" aria-hidden="true" />;
@@ -43,8 +46,9 @@ function CalendarMonth({ baseDate, startDate, endDate, onPick, controls = null }
             <button
               key={toISO(day)}
               type="button"
-              className={`calendar-day${isStart ? " is-start" : ""}${isEnd ? " is-end" : ""}${isBetween ? " is-between" : ""}`}
-              onClick={() => onPick(day)}
+              disabled={isPast}
+              className={`calendar-day${isStart ? " is-start" : ""}${isEnd ? " is-end" : ""}${isBetween ? " is-between" : ""}${isPast ? " is-past" : ""}`}
+              onClick={() => !isPast && onPick(day)}
             >
               {day.getDate()}
             </button>
@@ -76,7 +80,7 @@ export function SuggestionsPanel({
     const update = () => {
       const rect = anchorRef.current.getBoundingClientRect();
       const wantedWidth = clamp(Math.max(rect.width, 420), 420, 520);
-      const next = computePosition(rect, wantedWidth, 340);
+      const next = computePosition(rect, wantedWidth, 340, { preferBelow: true });
       setPosition({
         left: next.left,
         top: next.top,
@@ -133,10 +137,14 @@ export function SuggestionsPanel({
       {recentSearches.length ? (
         <div className="search-suggestion-group">
           <span className="search-chip-label">최근 검색</span>
-          <div className="search-chip-row">
+          <div className="search-suggestion-list search-suggestion-list-stacked search-suggestion-list-recent">
             {recentSearches.map((item) => (
-              <button key={item} type="button" className="search-chip" onClick={() => onPickRecent(item)}>
-                {item}
+              <button key={item} type="button" className="search-suggestion-item recent" onClick={() => onPickRecent(item)}>
+                <span className="search-suggestion-icon">↺</span>
+                <div className="search-suggestion-copy">
+                  <strong>{item}</strong>
+                  <span>최근 확인한 검색어</span>
+                </div>
               </button>
             ))}
           </div>
@@ -241,6 +249,12 @@ export function DateRangePopover({ open, anchorRef, panelRef, visibleMonth, setV
 
   const startDate = parseISO(checkIn);
   const endDate = parseISO(checkOut);
+  const currentMonth = new Date();
+  currentMonth.setDate(1);
+  currentMonth.setHours(0, 0, 0, 0);
+  const isPrevMonthDisabled =
+    visibleMonth.getFullYear() === currentMonth.getFullYear() &&
+    visibleMonth.getMonth() === currentMonth.getMonth();
 
   return createPortal(
     <div
@@ -261,7 +275,15 @@ export function DateRangePopover({ open, anchorRef, panelRef, visibleMonth, setV
           onPick={onPick}
           controls={(
             <div className="calendar-toolbar">
-              <button type="button" className="calendar-nav" onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}>
+              <button
+                type="button"
+                className="calendar-nav"
+                disabled={isPrevMonthDisabled}
+                onClick={() => {
+                  if (isPrevMonthDisabled) return;
+                  setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
+                }}
+              >
                 이전
               </button>
               <button type="button" className="calendar-nav" onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}>

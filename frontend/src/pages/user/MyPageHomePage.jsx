@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import MyPageLayout from "../../components/user/MyPageLayout";
 import { myPageSections } from "../../data/mypageData";
 import { formatMembershipLabel } from "../../features/mypage/mypageViewModels";
-import { getMyBookings, getMyHome } from "../../services/mypageService";
+import { getMyHome } from "../../services/mypageService";
 
 const EMPTY_PROFILE_SUMMARY = {
   name: "TripZone 회원",
@@ -23,15 +23,9 @@ export default function MyPageHomePage() {
     async function loadMyHome() {
       try {
         setIsLoading(true);
-        const [response, bookingRows] = await Promise.all([getMyHome(), getMyBookings()]);
+        const response = await getMyHome();
         if (cancelled) return;
-        setHomeData({
-          ...response,
-          nextTrip:
-            bookingRows.find((item) => item.status !== "COMPLETED" && item.status !== "CANCELED") ??
-            bookingRows[0] ??
-            null,
-        });
+        setHomeData(response);
       } catch (error) {
         console.error("Failed to load mypage home.", error);
       } finally {
@@ -59,30 +53,6 @@ export default function MyPageHomePage() {
     { label: "사용 가능 쿠폰", value: `${availableCouponCount}장`, href: "/my/coupons" },
     { label: "결제 완료", value: `${paidCount}건`, href: "/my/payments" },
   ];
-  const nextTrip = useMemo(() => {
-    const nextBooking = homeData?.nextTrip;
-    if (!nextBooking) {
-      return {
-        name: "다음 예약을 확인해 주세요",
-        stay: "예약 내역에서 실제 일정 확인",
-        roomName: "예정된 예약 없음",
-        status: "PENDING",
-        bookingStatusLabel: "일정 확인",
-        price: "-",
-        guestCount: "-",
-      };
-    }
-
-    return {
-      name: nextBooking.name ?? nextBooking.lodgingName ?? "다음 여행",
-      stay: nextBooking.stay ?? "일정 확인",
-      roomName: nextBooking.roomName ?? "객실 확인",
-      status: nextBooking.status ?? "PENDING",
-      bookingStatusLabel: nextBooking.bookingStatusLabel ?? "일정 확인",
-      price: nextBooking.price ?? "-",
-      guestCount: nextBooking.guestCount ?? "-",
-    };
-  }, [homeData?.nextTrip]);
   const shortcutItems = useMemo(() => {
     const menuMap = new Map((homeData?.menus ?? []).map((item) => [item.href, item]));
     return myPageSections.map((item) => ({
@@ -112,19 +82,6 @@ export default function MyPageHomePage() {
               <span className="my-stat-pill is-mint">{profileSummary.status}</span>
               <span className="my-stat-pill">{formatMembershipLabel(profileSummary.grade)}</span>
               <span className="my-stat-pill is-soft">{profileSummary.joinedAt}</span>
-            </div>
-          </Link>
-
-          <Link to="/my/bookings" className="my-home-trip-card">
-            <div className="my-home-trip-copy">
-              <span className="my-home-label">다음 여행</span>
-              <strong>{nextTrip.name}</strong>
-              <p>{nextTrip.stay} · {nextTrip.roomName}</p>
-            </div>
-            <div className="my-home-trip-meta">
-              <span className={`table-code code-${nextTrip.status.toLowerCase()}`}>{nextTrip.bookingStatusLabel}</span>
-              <strong>{nextTrip.price}</strong>
-              <span>{nextTrip.guestCount}인 · 예약 상세로 이동</span>
             </div>
           </Link>
         </section>

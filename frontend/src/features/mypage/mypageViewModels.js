@@ -2,6 +2,7 @@ export const BOOKING_STATUS_LABELS = {
   CONFIRMED: "확정",
   PENDING: "대기",
   COMPLETED: "숙박 완료",
+  CANCELED: "예약 취소",
 };
 
 export const INQUIRY_STATUS_LABELS = {
@@ -47,16 +48,18 @@ export function getProfileFieldGroups(details) {
   };
 }
 
+const INACTIVE_STATUSES = ["COMPLETED", "CANCELED"];
+
 export function getBookingTabSummary(rows) {
-  const upcomingCount = rows.filter((item) => item.status !== "COMPLETED").length;
+  const upcomingCount = rows.filter((item) => !INACTIVE_STATUSES.includes(item.status)).length;
   const completedCount = rows.filter((item) => item.status === "COMPLETED").length;
   return { upcomingCount, completedCount };
 }
 
 export function filterBookingRows(rows, tab) {
   return rows.filter((item) => {
-    if (tab === "upcoming") return item.status !== "COMPLETED";
-    if (tab === "completed") return item.status === "COMPLETED";
+    if (tab === "upcoming") return !INACTIVE_STATUSES.includes(item.status);
+    if (tab === "completed") return INACTIVE_STATUSES.includes(item.status);
     return true;
   });
 }

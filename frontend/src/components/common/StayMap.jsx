@@ -39,7 +39,7 @@ export default function StayMap({ items, selectedId = null, height = 420, single
     ? [focusedPoint.latitude, focusedPoint.longitude]
     : [points.reduce((sum, item) => sum + item.latitude, 0) / points.length, points.reduce((sum, item) => sum + item.longitude, 0) / points.length];
 
-  const zoom = focusedPoint ? (single ? 13 : 11) : 6.4;
+  const zoom = focusedPoint ? (single ? 13 : 11) : 7.2;
 
   useEffect(() => {
     if (!mapInstance) return;

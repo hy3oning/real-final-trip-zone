@@ -166,7 +166,6 @@ export function buildFilterSummary(filters, sortOptions) {
     ...filters.discounts.map((value) => DISCOUNT_OPTIONS.find((item) => item.value === value)?.label).filter(Boolean),
     ...filters.grades.map((value) => GRADE_OPTIONS.find((item) => item.value === value)?.label).filter(Boolean),
     filters.availableOnly ? "매진 제외" : null,
-    sortOptions.find((item) => item.value === filters.sort)?.label ?? null,
   ].filter(Boolean);
 }
 

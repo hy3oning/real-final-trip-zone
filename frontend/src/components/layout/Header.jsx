@@ -5,9 +5,16 @@ import { getHeaderRoleLinks, getMembershipLabel, logoutCurrentSession } from "..
 import { formatMembershipLabel } from "../../features/mypage/mypageViewModels";
 import { getMyHome } from "../../services/mypageService";
 
+const PRIMARY_NAV_ITEMS = [
+  { label: "숙소 탐색", to: "/lodgings", match: (pathname, search) => pathname.startsWith("/lodgings") && !search.includes("theme=deal") },
+  { label: "오늘 특가", to: "/lodgings?theme=deal", match: (pathname, search) => pathname === "/lodgings" && search.includes("theme=deal") },
+  { label: "예약 내역", to: "/my/bookings", match: (pathname) => pathname.startsWith("/my/bookings") },
+];
+
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
+  const isHome = location.pathname === "/";
   const [session, setSession] = useState(() => readAuthSession());
   const [menuOpen, setMenuOpen] = useState(false);
   const [homeSnapshot, setHomeSnapshot] = useState(null);
@@ -89,18 +96,32 @@ export default function Header() {
   const mileageValue = homeSnapshot?.profileSummary?.mileage ?? "0P";
 
   return (
-    <header className="header">
+    <header className={`header${isHome ? " is-home" : ""}`}>
       <div className="header-frame header-inner">
-        <Link className="brand" to="/">
-          <span className="brand-mark" aria-hidden="true">
-            <span className="brand-mark-wave" />
-            <span className="brand-mark-sun" />
-          </span>
-          <span className="brand-copy">
-            <span className="brand-main">TripZone</span>
-            <span className="brand-sub">stay and travel</span>
-          </span>
-        </Link>
+        <div className="header-brand-wrap">
+          <Link className="brand" to="/">
+            <span className="brand-mark" aria-hidden="true">
+              <span className="brand-mark-wave" />
+              <span className="brand-mark-sun" />
+            </span>
+            <span className="brand-copy">
+              <span className="brand-main">TripZone</span>
+              <span className="brand-sub">stay and travel</span>
+            </span>
+          </Link>
+          {!isHome ? (
+            <nav className="header-nav" aria-label="주요 메뉴">
+              {PRIMARY_NAV_ITEMS.map((item) => {
+                const isActive = item.match(location.pathname, location.search);
+                return (
+                  <Link key={item.label} className={`nav-chip${isActive ? " active" : ""}`} to={item.to}>
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          ) : null}
+        </div>
         <div className="header-utility">
           {session ? (
             <div className="header-profile-menu" ref={menuRef}>
