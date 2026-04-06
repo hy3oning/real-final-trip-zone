@@ -229,7 +229,10 @@ export default function HomePage() {
       <section className="home-rebuild-stage home-rebuild-viewport">
         <div className="home-rebuild-shell">
           <div className="home-rebuild-copy">
-            <h1>일정에 맞는 국내 숙소를 찾아보세요.</h1>
+            <h1>
+              일정에 맞는 국내 숙소를
+              <span className="home-rebuild-headline-break">찾아보세요.</span>
+            </h1>
           </div>
 
           <form ref={searchShellRef} className="home-rebuild-search-strip" onSubmit={handleSearchSubmit}>
