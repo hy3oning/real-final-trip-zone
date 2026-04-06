@@ -37,7 +37,7 @@ export function RoomOptionsSection({ lodging, roomOptions, selectedRoom, onSelec
   return (
     <section className="detail-review-section">
       <div className="detail-headline">
-        <span className="small-label">객실 셀렉션</span>
+        <span className="small-label">객실 선택</span>
         <h2>지금 고를 수 있는 객실</h2>
       </div>
       {!roomOptions.length ? (
@@ -89,7 +89,19 @@ export function RoomOptionsSection({ lodging, roomOptions, selectedRoom, onSelec
   );
 }
 
-export function ReviewSection({ authSession, canWriteReview, galleryImages, lodging, reviewAverage, reviewDraft, reviews, onChangeDraft, onSubmit, onImageChange }) {
+export function ReviewSection({
+  authSession,
+  canWriteReview,
+  lodging,
+  reviewAverage,
+  reviewDraft,
+  reviews,
+  onChangeDraft,
+  onSubmit,
+  onImageChange,
+  onEdit,
+  onDelete,
+}) {
   return (
     <section className="detail-review-section">
       <div className="detail-headline">
@@ -100,10 +112,10 @@ export function ReviewSection({ authSession, canWriteReview, galleryImages, lodg
         <span className="accent-rating">★ {reviewAverage}</span>
         <span>{lodging.reviewCount}</span>
       </div>
-      {authSession ? (
+      {authSession && canWriteReview ? (
         <form className="detail-review-form" onSubmit={onSubmit}>
           <div className="detail-review-form-head">
-            <strong>후기 작성</strong>
+            <strong>{reviewDraft.reviewId ? "후기 수정" : "후기 작성"}</strong>
             <div className="detail-review-stars" role="radiogroup" aria-label="별점 선택">
               {renderInteractiveStars(reviewDraft.score, (score) => onChangeDraft({ score }))}
             </div>
@@ -115,27 +127,30 @@ export function ReviewSection({ authSession, canWriteReview, galleryImages, lodg
               <input type="file" accept="image/*" multiple onChange={onImageChange} hidden />
             </label>
             <button type="submit" className="primary-button detail-review-submit">
-              후기 등록
+              {reviewDraft.reviewId ? "후기 저장" : "후기 등록"}
             </button>
           </div>
           {reviewDraft.images.length ? (
             <div className="detail-review-upload-preview">
               {reviewDraft.images.map((image) => (
-                <div key={image} className="detail-review-upload-thumb" style={{ backgroundImage: `url(${image})` }} />
+                <div key={image.fileName} className="detail-review-upload-thumb" style={{ backgroundImage: `url(${image.previewUrl})` }} />
               ))}
             </div>
           ) : null}
         </form>
+      ) : authSession ? (
+        <div className="detail-review-gate">
+          <strong>숙박 완료 후 후기 작성 가능</strong>
+          <p>후기 작성은 해당 숙소의 숙박 완료 내역이 있는 회원만 이용할 수 있습니다.</p>
+        </div>
       ) : (
-        reviews.length === 0 && (
-          <div className="detail-review-gate">
-            <strong>로그인 후 후기 작성 가능</strong>
-            <p>후기 작성은 로그인 후 이용할 수 있습니다.</p>
-            <Link className="secondary-button" to="/login">
-              로그인하기
-            </Link>
-          </div>
-        )
+        <div className="detail-review-gate">
+          <strong>로그인 후 후기 작성 가능</strong>
+          <p>후기 작성은 로그인 후 이용할 수 있습니다.</p>
+          <Link className="secondary-button" to="/login">
+            로그인하기
+          </Link>
+        </div>
       )}
       <div className="detail-review-list">
         {reviews.map((item, index) => (
@@ -148,15 +163,23 @@ export function ReviewSection({ authSession, canWriteReview, galleryImages, lodg
               </span>
             </div>
             <p>{item.body}</p>
-            <div className="detail-review-gallery">
-              {(item.images?.length ? item.images : galleryImages.slice(0, 2)).map((image, imageIndex) => (
-                <div
-                  key={`${item.id ?? item.author}-${imageIndex}`}
-                  className="detail-review-thumb"
-                  style={{ backgroundImage: `url(${image}${item.images?.length ? "" : index === 1 ? "&sat=6" : ""})` }}
-                />
-              ))}
-            </div>
+            {authSession?.userNo && Number(authSession.userNo) === Number(item.userNo) ? (
+              <div className="saas-form-actions saas-form-actions-start">
+                <button type="button" className="saas-btn-ghost" onClick={() => onEdit(item)}>후기 수정</button>
+                <button type="button" className="saas-btn-danger" onClick={() => onDelete(item)}>후기 삭제</button>
+              </div>
+            ) : null}
+            {item.imageUrls?.length ? (
+              <div className="detail-review-gallery">
+                {item.imageUrls.map((image, imageIndex) => (
+                  <div
+                    key={`${item.id ?? item.author}-${imageIndex}`}
+                    className="detail-review-thumb"
+                    style={{ backgroundImage: `url(${image})` }}
+                  />
+                ))}
+              </div>
+            ) : null}
           </article>
         ))}
       </div>

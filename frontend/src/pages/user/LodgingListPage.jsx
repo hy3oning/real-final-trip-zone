@@ -215,6 +215,19 @@ export default function LodgingListPage() {
     setActivePanel(null);
   };
 
+  const updateSearchGlow = (event) => {
+    const { currentTarget, clientX, clientY } = event;
+    const rect = currentTarget.getBoundingClientRect();
+    currentTarget.style.setProperty("--search-glow-x", `${clientX - rect.left}px`);
+    currentTarget.style.setProperty("--search-glow-y", `${clientY - rect.top}px`);
+  };
+
+  const resetSearchGlow = () => {
+    if (!searchShellRef.current) return;
+    searchShellRef.current.style.setProperty("--search-glow-x", "50%");
+    searchShellRef.current.style.setProperty("--search-glow-y", "50%");
+  };
+
   const handleDatePick = (day) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -264,7 +277,13 @@ export default function LodgingListPage() {
 
   return (
     <div className="container list-page">
-      <form ref={searchShellRef} className="list-search-bar list-search-bar-showcase list-search-bar-wide" onSubmit={handleSearchSubmit}>
+      <form
+        ref={searchShellRef}
+        className="list-search-bar list-search-bar-showcase list-search-bar-wide"
+        onSubmit={handleSearchSubmit}
+        onMouseMove={updateSearchGlow}
+        onMouseLeave={resetSearchGlow}
+      >
         <div className="list-search-ambient" aria-hidden="true">
           <span className="list-search-accent list-search-accent-warm" />
           <span className="list-search-accent list-search-accent-cool" />

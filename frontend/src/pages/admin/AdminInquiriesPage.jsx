@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import DataTable from "../../components/common/DataTable";
+import { toUserFacingErrorMessage } from "../../lib/appClient";
 import { getAdminInquiries, replyAdminInquiry, updateAdminInquiryStatus } from "../../services/dashboardService";
 
 const columns = [
@@ -60,7 +61,7 @@ export default function AdminInquiriesPage() {
       setSelectedId(updated.id);
       setNotice("문의 상태를 변경했습니다.");
     } catch (error) {
-      setNotice(error.message);
+      setNotice(toUserFacingErrorMessage(error, "문의 상태를 변경하지 못했습니다."));
     }
   };
 
@@ -76,7 +77,7 @@ export default function AdminInquiriesPage() {
       setReplyDraft("");
       setNotice("문의 답변을 등록했습니다.");
     } catch (error) {
-      setNotice(error.message);
+      setNotice(toUserFacingErrorMessage(error, "문의 답변을 등록하지 못했습니다."));
     } finally {
       setIsReplying(false);
     }

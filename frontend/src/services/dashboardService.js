@@ -167,14 +167,21 @@ function mapInquiryDto(dto, comments = []) {
 }
 
 function mapReservationDto(dto) {
+  const bookingNo = dto.bookingNo ?? dto.no ?? dto.id;
+  const guestName = dto.userName ?? dto.guestName ?? (dto.userNo ? `회원 ${dto.userNo}` : "-");
+  const lodgingName = dto.lodgingName ?? dto.accommodationName ?? "숙소 확인";
+  const roomName = dto.roomName ?? dto.productName ?? "객실 확인";
+
   return {
-    id: dto.bookingNo,
-    no: dto.bookingNo,
-    guest: dto.userNo ? `회원 ${dto.userNo}` : "-",
+    id: bookingNo,
+    no: bookingNo,
+    guest: guestName,
+    guestName,
+    lodging: lodgingName,
     stay: `${formatDateLabel(dto.checkInDate)} - ${formatDateLabel(dto.checkOutDate)}`,
     status: dto.status ?? "PENDING",
     amount: formatMoney(dto.totalPrice),
-    detail: `${dto.lodgingName ?? "숙소 확인"} · ${dto.roomName ?? "객실 확인"}`,
+    detail: `${lodgingName} · ${roomName}`,
   };
 }
 
@@ -247,6 +254,7 @@ function mapSellerAssetRows(lodging) {
         order: "1",
         status: "미등록",
         fileName: null,
+        isExternal: false,
       },
     ];
   }
@@ -259,6 +267,7 @@ function mapSellerAssetRows(lodging) {
     order: String(index + 1),
     status: index === 0 ? "대표 노출" : "일반 노출",
     fileName,
+    isExternal: /^https?:\/\//i.test(fileName),
   }));
 }
 
@@ -717,7 +726,9 @@ export async function deleteSellerRoom(roomId) {
 
 export async function getSellerAssets() {
   const lodgings = await getSellerLodgings();
-  return lodgings.flatMap(mapSellerAssetRows);
+  return lodgings
+    .filter((lodging) => lodging.status === "ACTIVE")
+    .flatMap(mapSellerAssetRows);
 }
 
 export async function updateSellerAsset(assetId, patchData) {
@@ -726,6 +737,9 @@ export async function updateSellerAsset(assetId, patchData) {
 
   if (!target?.fileName) {
     throw new Error("조정할 이미지가 없습니다.");
+  }
+  if (target.isExternal) {
+    throw new Error("외부 URL 이미지는 이 화면에서 직접 수정할 수 없습니다.");
   }
 
   const lodging = await get(`/api/lodgings/${target.lodgingId}`);
@@ -782,6 +796,9 @@ export async function deleteSellerAsset(assetId) {
 
   if (!target?.fileName) {
     throw new Error("삭제할 이미지가 없습니다.");
+  }
+  if (target.isExternal) {
+    throw new Error("외부 URL 이미지는 이 화면에서 직접 삭제할 수 없습니다.");
   }
 
   const lodging = await get(`/api/lodgings/${target.lodgingId}`);

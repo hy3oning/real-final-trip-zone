@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import DataTable from "../../components/common/DataTable";
+import { toUserFacingErrorMessage } from "../../lib/appClient";
 import {
   deleteSellerAsset,
   getSellerAssets,
@@ -11,9 +12,16 @@ import {
 const columns = [
   { key: "lodging", label: "숙소명" },
   { key: "type", label: "이미지 유형" },
-  { key: "order", label: "정렬 순서" },
+  { key: "displayFileName", label: "파일명" },
   { key: "status", label: "노출 상태" },
 ];
+
+function decorateRows(rows) {
+  return rows.map((row) => ({
+    ...row,
+    displayFileName: row.fileName ?? "등록된 파일 없음",
+  }));
+}
 
 export default function SellerAssetsPage() {
   const [rows, setRows] = useState([]);
@@ -23,6 +31,8 @@ export default function SellerAssetsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadFiles, setUploadFiles] = useState([]);
   const selected = rows.find((row) => row.id === selectedKey) ?? rows[0];
+  const selectedFileName = selected?.fileName ?? "등록된 파일 없음";
+  const selectedActionBlocked = !selected?.fileName || selected?.isExternal;
 
   useEffect(() => {
     let cancelled = false;
@@ -32,7 +42,7 @@ export default function SellerAssetsPage() {
         setIsLoading(true);
         const nextRows = await getSellerAssets();
         if (cancelled) return;
-        setRows(nextRows);
+        setRows(decorateRows(nextRows));
         setSelectedKey(nextRows[0]?.id ?? null);
       } catch (error) {
         if (cancelled) return;
@@ -58,11 +68,11 @@ export default function SellerAssetsPage() {
       setIsSubmitting(true);
       const updated = await updateSellerAsset(selected.id, patch);
       const nextRows = await getSellerAssets();
-      setRows(nextRows);
+      setRows(decorateRows(nextRows));
       setSelectedKey(updated?.id ?? nextRows[0]?.id ?? null);
       setNotice("대표 이미지를 변경했습니다.");
     } catch (error) {
-      setNotice(error.message);
+      setNotice(toUserFacingErrorMessage(error, "이미지 상태를 변경하지 못했습니다."));
     } finally {
       setIsSubmitting(false);
     }
@@ -78,12 +88,12 @@ export default function SellerAssetsPage() {
     try {
       setIsSubmitting(true);
       const nextRows = await uploadSellerAsset(selected.lodgingId, uploadFiles);
-      setRows(nextRows);
+      setRows(decorateRows(nextRows));
       setSelectedKey(nextRows.find((row) => row.lodgingId === selected.lodgingId)?.id ?? nextRows[0]?.id ?? null);
       setUploadFiles([]);
       setNotice("이미지를 첨부했습니다.");
     } catch (error) {
-      setNotice(error.message);
+      setNotice(toUserFacingErrorMessage(error, "이미지를 첨부하지 못했습니다."));
     } finally {
       setIsSubmitting(false);
     }
@@ -94,11 +104,11 @@ export default function SellerAssetsPage() {
     try {
       setIsSubmitting(true);
       const nextRows = await deleteSellerAsset(selected.id);
-      setRows(nextRows);
+      setRows(decorateRows(nextRows));
       setSelectedKey(nextRows.find((row) => row.lodgingId === selected.lodgingId)?.id ?? nextRows[0]?.id ?? null);
       setNotice("이미지를 삭제했습니다.");
     } catch (error) {
-      setNotice(error.message);
+      setNotice(toUserFacingErrorMessage(error, "이미지를 삭제하지 못했습니다."));
     } finally {
       setIsSubmitting(false);
     }
@@ -122,7 +132,7 @@ export default function SellerAssetsPage() {
         <aside className="saas-bento-panel">
           <div className="saas-bento-head">
             <strong>{selected?.lodging ?? "이미지를 선택해 주세요"}</strong>
-            {selected?.type ? <p>{selected.type} · 순서 {selected.order}</p> : null}
+            {selected?.type ? <p>{selected.type} · {selectedFileName}</p> : null}
           </div>
           <div className="dash-chips">
             <span className="dash-chip is-accent">
@@ -132,10 +142,11 @@ export default function SellerAssetsPage() {
               일반 {rows.filter((r) => r.type === "일반 이미지").length}개
             </span>
           </div>
+          {selected?.isExternal ? <div className="my-empty-inline">외부 URL 이미지는 이 화면에서 직접 수정/삭제할 수 없습니다.</div> : null}
           <div className="saas-form-actions saas-form-actions-start">
-            <button type="button" className="saas-btn-primary" onClick={() => updateSelected({ mode: "PRIMARY" })} disabled={!selected || !selected.fileName || isSubmitting}>대표 지정</button>
-            <button type="button" className="saas-btn-ghost" onClick={() => updateSelected({ mode: "LAST" })} disabled={!selected || !selected.fileName || isSubmitting}>뒤로 보내기</button>
-            <button type="button" className="saas-btn-ghost" onClick={handleDelete} disabled={!selected || !selected.fileName || isSubmitting}>이미지 삭제</button>
+            <button type="button" className="saas-btn-primary" onClick={() => updateSelected({ mode: "PRIMARY" })} disabled={selectedActionBlocked || isSubmitting}>대표 지정</button>
+            <button type="button" className="saas-btn-ghost" onClick={() => updateSelected({ mode: "LAST" })} disabled={selectedActionBlocked || isSubmitting}>뒤로 보내기</button>
+            <button type="button" className="saas-btn-ghost" onClick={handleDelete} disabled={selectedActionBlocked || isSubmitting}>이미지 삭제</button>
           </div>
           <form className="saas-create-form-grid" onSubmit={(event) => event.preventDefault()}>
             <label className="saas-field">
@@ -147,8 +158,8 @@ export default function SellerAssetsPage() {
               <input value={selected?.type ?? ""} readOnly />
             </label>
             <label className="saas-field">
-              <span>정렬 순서</span>
-              <input value={selected?.order ?? ""} readOnly />
+              <span>파일명</span>
+              <input value={selectedFileName} readOnly />
             </label>
             <label className="saas-field">
               <span>노출 상태</span>

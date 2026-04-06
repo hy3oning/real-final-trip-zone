@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import DataTable from "../../components/common/DataTable";
+import { toUserFacingErrorMessage } from "../../lib/appClient";
 import {
   createSellerRoom,
   deleteSellerRoom,
@@ -88,7 +89,7 @@ export default function SellerRoomsPage() {
       } catch (error) {
         if (cancelled) return;
         console.error("Failed to load seller rooms.", error);
-        setNotice(error.message || "객실 목록을 불러오지 못했습니다.");
+        setNotice(toUserFacingErrorMessage(error, "객실 목록을 불러오지 못했습니다."));
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -123,7 +124,7 @@ export default function SellerRoomsPage() {
       setRows((prev) => prev.map((row) => (row.id === selected.id ? { ...row, ...updated } : row)));
       setNotice("");
     } catch (error) {
-      setNotice(error.message);
+      setNotice(toUserFacingErrorMessage(error, "객실 상태를 변경하지 못했습니다."));
     }
   };
 
@@ -180,7 +181,7 @@ export default function SellerRoomsPage() {
         setNotice("객실 정보를 수정했습니다.");
       }
     } catch (error) {
-      setNotice(error.message || "객실 저장에 실패했습니다.");
+      setNotice(toUserFacingErrorMessage(error, "객실 저장에 실패했습니다."));
     } finally {
       setIsSubmitting(false);
     }
@@ -198,7 +199,7 @@ export default function SellerRoomsPage() {
       setForm(refreshed ? toRoomForm(refreshed) : { ...INITIAL_FORM, lodgingId: String(lodgings[0]?.id ?? "") });
       setNotice("객실을 삭제한 것이 아니라 예약 불가 처리했습니다.");
     } catch (error) {
-      setNotice(error.message || "객실 삭제에 실패했습니다.");
+      setNotice(toUserFacingErrorMessage(error, "객실 삭제에 실패했습니다."));
     }
   };
 

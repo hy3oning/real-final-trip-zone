@@ -619,10 +619,59 @@
   white-space: nowrap;
 }
 
-.seller-reservations-table-section th:nth-child(5),
-.seller-reservations-table-section td:nth-child(5) {
+.seller-reservations-table-section th:nth-child(3),
+.seller-reservations-table-section td:nth-child(3) {
+  width: 160px;
+  max-width: 160px;
+}
+
+.seller-reservations-table-section th:nth-child(4),
+.seller-reservations-table-section td:nth-child(4) {
+  width: 180px;
+  white-space: nowrap;
+}
+
+.seller-reservations-table-section th:nth-child(6),
+.seller-reservations-table-section td:nth-child(6) {
   width: 120px;
   white-space: nowrap;
+}
+
+.seller-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.seller-pagination-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.seller-pagination-page,
+.seller-pagination-arrow {
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid rgba(23, 36, 51, 0.12);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink-700);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.seller-pagination-page.is-active {
+  background: rgba(58, 120, 110, 0.12);
+  border-color: rgba(58, 120, 110, 0.28);
+  color: var(--brand-700);
+}
+
+.seller-pagination-page:disabled,
+.seller-pagination-arrow:disabled {
+  opacity: 0.45;
 }
 
 .admin-inquiry-thread-list {

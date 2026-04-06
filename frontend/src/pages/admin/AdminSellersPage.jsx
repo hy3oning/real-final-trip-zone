@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import DataTable from "../../components/common/DataTable";
+import { toUserFacingErrorMessage } from "../../lib/appClient";
 import { getAdminSellers, updateAdminSellerStatus } from "../../services/dashboardService";
 
 const columns = [
@@ -54,7 +55,7 @@ export default function AdminSellersPage() {
       setSelectedSellerId(nextRows.find((row) => row.id === selectedSeller.id)?.id ?? nextRows[0]?.id ?? null);
       setNotice("판매자 상태를 변경했습니다.");
     } catch (error) {
-      setNotice(error.message);
+      setNotice(toUserFacingErrorMessage(error, "판매자 상태를 변경하지 못했습니다."));
     }
   };
 

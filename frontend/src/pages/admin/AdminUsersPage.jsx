@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import DataTable from "../../components/common/DataTable";
+import { toUserFacingErrorMessage } from "../../lib/appClient";
 import { getAdminUserDetail, getAdminUsers, updateAdminUserStatus } from "../../services/dashboardService";
 
 const columns = [
@@ -80,7 +81,7 @@ export default function AdminUsersPage() {
       setRows((current) => current.map((row) => (row.id === updatedUser.id ? updatedUser : row)));
       setNotice("회원 상태를 변경했습니다.");
     } catch (error) {
-      setNotice(error.message);
+      setNotice(toUserFacingErrorMessage(error, "회원 상태를 변경하지 못했습니다."));
     }
   };
 

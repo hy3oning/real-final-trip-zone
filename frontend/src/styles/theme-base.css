@@ -453,6 +453,67 @@ button {
   display: none;
 }
 
+.header.is-home .brand {
+  position: relative;
+  isolation: isolate;
+}
+
+.header.is-home .brand::before {
+  content: "";
+  position: absolute;
+  inset: -14px -18px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 18% 50%, rgba(255, 214, 155, 0.2), transparent 30%),
+    radial-gradient(circle at 82% 38%, rgba(92, 208, 201, 0.18), transparent 34%);
+  filter: blur(16px);
+  opacity: 0.72;
+  transform: scale(0.96);
+  transition:
+    opacity 0.26s ease,
+    transform 0.26s ease,
+    filter 0.26s ease;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.header.is-home .brand:hover::before {
+  opacity: 0.92;
+  transform: scale(1.02);
+  filter: blur(18px);
+}
+
+.header.is-home .brand-mark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.22), transparent 42%),
+    radial-gradient(circle at 22% 18%, rgba(255, 247, 223, 0.55), transparent 24%);
+  opacity: 0.88;
+  pointer-events: none;
+}
+
+.header.is-home .brand-mark::after {
+  content: "";
+  position: absolute;
+  inset: -42% auto auto -18%;
+  width: 68%;
+  height: 170%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0));
+  transform: rotate(23deg) translateX(-120%);
+  opacity: 0;
+  transition:
+    transform 0.7s ease,
+    opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.header.is-home .brand:hover .brand-mark::after {
+  transform: rotate(23deg) translateX(150%);
+  opacity: 1;
+}
+
 @media (max-width: 1180px) {
   .header-inner {
     gap: 18px;

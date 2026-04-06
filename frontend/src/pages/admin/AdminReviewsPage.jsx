@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import DataTable from "../../components/common/DataTable";
+import { toUserFacingErrorMessage } from "../../lib/appClient";
 import { getAdminReviews, updateAdminReviewStatus } from "../../services/dashboardService";
 
 const columns = [
@@ -54,7 +55,7 @@ export default function AdminReviewsPage() {
       setRows((current) => current.map((row) => (row.id === updated.id ? updated : row)));
       setNotice(`리뷰 상태를 ${nextStatus === "VISIBLE" ? "노출" : "숨김"}으로 변경했습니다.`);
     } catch (error) {
-      setNotice(error.message);
+      setNotice(toUserFacingErrorMessage(error, "리뷰 상태를 변경하지 못했습니다."));
     }
   };
 

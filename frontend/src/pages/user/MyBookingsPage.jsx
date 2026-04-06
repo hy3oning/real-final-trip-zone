@@ -6,7 +6,7 @@ import {
   filterBookingRows,
   getBookingTabSummary,
 } from "../../features/mypage/mypageViewModels";
-import { getCachedLodgingsSnapshot, getLodgings } from "../../services/lodgingService";
+import { getCachedLodgingsSnapshot, getLodgings, LODGING_FALLBACK_IMAGE } from "../../services/lodgingService";
 import { getMyBookings } from "../../services/mypageService";
 
 const MY_BOOKINGS_CACHE_KEY = "tripzone-my-bookings";
@@ -32,6 +32,7 @@ export default function MyBookingsPage() {
   const { upcomingCount, completedCount } = getBookingTabSummary(myBookingRows);
   const filteredRows = filterBookingRows(myBookingRows, tab);
   const lodgingMap = useMemo(() => Object.fromEntries(lodgings.map((lodging) => [lodging.id, lodging])), [lodgings]);
+  const formatMeta = (...parts) => parts.filter((part) => typeof part === "string" && part.trim()).join(" · ");
 
   useEffect(() => {
     let cancelled = false;
@@ -119,16 +120,23 @@ export default function MyBookingsPage() {
           {filteredRows.map((item) => (
             <article key={item.bookingId} className="booking-list-row">
               <div className="booking-list-media">
-                <img src={lodgingMap[item.lodgingId]?.image} alt={item.name} />
+                <img
+                  src={lodgingMap[item.lodgingId]?.image}
+                  alt={item.name}
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = LODGING_FALLBACK_IMAGE;
+                  }}
+                />
               </div>
               <div className="booking-list-main">
                 <div className="booking-list-copy">
                   <div className="payment-row-topline">
                     <span>{tab === "completed" ? "이용 일정" : "예약 일정"} {item.stay}</span>
-                    <span>{lodgingMap[item.lodgingId]?.region} · {lodgingMap[item.lodgingId]?.district}</span>
+                    <span>{formatMeta(lodgingMap[item.lodgingId]?.region, lodgingMap[item.lodgingId]?.district)}</span>
                   </div>
                   <strong>{item.name}</strong>
-                  <p>{lodgingMap[item.lodgingId]?.type} · {lodgingMap[item.lodgingId]?.room}</p>
+                  <p>{formatMeta(lodgingMap[item.lodgingId]?.type, lodgingMap[item.lodgingId]?.room)}</p>
                 </div>
               </div>
               <div className="booking-list-side">

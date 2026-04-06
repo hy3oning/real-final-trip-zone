@@ -41,8 +41,8 @@ export default function HomePage() {
       },
       {
         label: "오늘 특가",
-        to: "/lodgings?theme=deal",
-        active: location.pathname === "/lodgings" && location.search.includes("theme=deal"),
+        to: "/events",
+        active: location.pathname === "/events",
       },
       {
         label: "예약 내역",
@@ -177,6 +177,19 @@ export default function HomePage() {
     navigate(`/lodgings?${params.toString()}`);
   };
 
+  const updateSearchGlow = (event) => {
+    const { currentTarget, clientX, clientY } = event;
+    const rect = currentTarget.getBoundingClientRect();
+    currentTarget.style.setProperty("--search-glow-x", `${clientX - rect.left}px`);
+    currentTarget.style.setProperty("--search-glow-y", `${clientY - rect.top}px`);
+  };
+
+  const resetSearchGlow = () => {
+    if (!searchShellRef.current) return;
+    searchShellRef.current.style.setProperty("--search-glow-x", "50%");
+    searchShellRef.current.style.setProperty("--search-glow-y", "50%");
+  };
+
   const handleDatePick = (day) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -235,7 +248,13 @@ export default function HomePage() {
             </h1>
           </div>
 
-          <form ref={searchShellRef} className="home-rebuild-search-strip" onSubmit={handleSearchSubmit}>
+          <form
+            ref={searchShellRef}
+            className="home-rebuild-search-strip"
+            onSubmit={handleSearchSubmit}
+            onMouseMove={updateSearchGlow}
+            onMouseLeave={resetSearchGlow}
+          >
             <label
               ref={keywordRef}
               className={`home-rebuild-search-field${activePanel === "keyword" ? " is-active" : ""}`}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import DataTable from "../../components/common/DataTable";
+import { toUserFacingErrorMessage } from "../../lib/appClient";
 import {
   createSellerLodging,
   deleteSellerLodging,
@@ -93,9 +94,7 @@ export default function SellerLodgingsPage() {
         setMode("create");
         setForm(INITIAL_FORM);
         setNotice(
-          error.message?.includes("403") || error.message?.includes("Forbidden")
-            ? "판매자 세션이 만료됐거나 권한이 없습니다. 다시 로그인해 주세요."
-            : error.message || "숙소 목록을 불러오지 못했습니다.",
+          toUserFacingErrorMessage(error, "숙소 목록을 불러오지 못했습니다."),
         );
       } finally {
         if (!cancelled) {
@@ -130,7 +129,7 @@ export default function SellerLodgingsPage() {
       setForm(toLodgingForm(updated));
       setNotice("");
     } catch (error) {
-      setNotice(error.message);
+      setNotice(toUserFacingErrorMessage(error, "숙소 상태를 변경하지 못했습니다."));
     }
   };
 
@@ -156,7 +155,7 @@ export default function SellerLodgingsPage() {
       setForm(refreshed ? toLodgingForm(refreshed) : INITIAL_FORM);
       setNotice("숙소를 삭제했습니다.");
     } catch (error) {
-      setNotice(error.message || "숙소 삭제에 실패했습니다.");
+      setNotice(toUserFacingErrorMessage(error, "숙소 삭제에 실패했습니다."));
     }
   };
 

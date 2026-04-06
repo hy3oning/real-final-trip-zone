@@ -3,9 +3,7 @@ import { Link } from "react-router-dom";
 import MyPageLayout from "../../components/user/MyPageLayout";
 import { myPageSections } from "../../data/mypageData";
 import { formatMembershipLabel } from "../../features/mypage/mypageViewModels";
-import { getMyHome } from "../../services/mypageService";
-
-const MY_HOME_CACHE_KEY = "tripzone-my-home";
+import { getCachedMyHomeSnapshot, getMyHome } from "../../services/mypageService";
 
 const EMPTY_PROFILE_SUMMARY = {
   name: "TripZone 회원",
@@ -15,19 +13,8 @@ const EMPTY_PROFILE_SUMMARY = {
   joinedAt: "가입일 확인 중",
 };
 
-function readMyHomeCache() {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const raw = window.sessionStorage.getItem(MY_HOME_CACHE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
 export default function MyPageHomePage() {
-  const cachedHomeData = readMyHomeCache();
+  const cachedHomeData = getCachedMyHomeSnapshot();
   const [homeData, setHomeData] = useState(cachedHomeData);
   const [isLoading, setIsLoading] = useState(!cachedHomeData);
 
@@ -42,9 +29,6 @@ export default function MyPageHomePage() {
         const response = await getMyHome();
         if (cancelled) return;
         setHomeData(response);
-        if (typeof window !== "undefined") {
-          window.sessionStorage.setItem(MY_HOME_CACHE_KEY, JSON.stringify(response));
-        }
       } catch (error) {
         console.error("Failed to load mypage home.", error);
       } finally {

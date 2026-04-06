@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import DataTable from "../../components/common/DataTable";
+import { toUserFacingErrorMessage } from "../../lib/appClient";
 import {
   createAdminCoupon,
   createAdminEvent,
@@ -142,7 +143,7 @@ export default function AdminEventsPage() {
       setRows((current) => current.map((row) => (row.id === updatedEvent.id ? updatedEvent : row)));
       setNotice("이벤트 상태를 변경했습니다.");
     } catch (error) {
-      setNotice(error.message);
+      setNotice(toUserFacingErrorMessage(error, "이벤트 상태를 변경하지 못했습니다."));
     }
   };
 
@@ -178,7 +179,7 @@ export default function AdminEventsPage() {
       }
       setUploadFile(null);
     } catch (error) {
-      setNotice(error.message);
+      setNotice(toUserFacingErrorMessage(error, section === "COUPON" ? "쿠폰 저장에 실패했습니다." : "이벤트 저장에 실패했습니다."));
     }
   };
 
@@ -201,7 +202,7 @@ export default function AdminEventsPage() {
       }
       setNotice(selectedEvent.entityType === "EVENT" ? "이벤트를 삭제했습니다." : "쿠폰을 삭제했습니다.");
     } catch (error) {
-      setNotice(error.message);
+      setNotice(toUserFacingErrorMessage(error, section === "COUPON" ? "쿠폰 삭제에 실패했습니다." : "이벤트 삭제에 실패했습니다."));
     }
   };
 
