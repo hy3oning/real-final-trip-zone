@@ -68,27 +68,33 @@ function resolveCouponTargetLabel(couponName = "") {
   return getEventTargetLabel(resolveCouponTargetValue(couponName));
 }
 
+function formatCouponDiscountLabel(discountType, discountValue) {
+  return discountType === "PERCENT"
+    ? `${Number(discountValue ?? 0)}% 할인`
+    : `${Number(discountValue ?? 0).toLocaleString()}원 할인`;
+}
+
 function mapCouponDto(dto, index = 0) {
   const targetValue = resolveCouponTargetValue(dto.couponName ?? "");
   const targetLabel = resolveCouponTargetLabel(dto.couponName ?? "");
-  const discountLabel =
-    dto.discountType === "RATE"
-      ? `${Number(dto.discountValue ?? 0)}% 할인`
-      : `${Number(dto.discountValue ?? 0).toLocaleString()}원 할인`;
+  const discountLabel = formatCouponDiscountLabel(dto.discountType, dto.discountValue);
+  const couponName = String(dto.couponName ?? "").trim();
+  const couponTitle = couponName || `${discountLabel} 쿠폰`;
+  const couponSubtitle = `${discountLabel} · ${targetLabel}`;
 
   return {
     id: `coupon-${dto.couponNo}`,
     entityType: "COUPON",
     couponNo: dto.couponNo,
     couponName: dto.couponName,
-    title: dto.couponName,
-    subtitle: `${discountLabel} · ${targetLabel}`,
+    title: couponTitle,
+    subtitle: couponSubtitle,
     action: "쿠폰 받기",
-    heroTitle: dto.couponName,
-    heroSubtitle: `${targetLabel} 예약에 바로 적용할 수 있는 ${discountLabel} 쿠폰입니다.`,
-    heroEyebrow: "Coupon Benefit",
+    heroTitle: couponTitle,
+    heroSubtitle: couponSubtitle,
+    heroEyebrow: "Discount Coupon",
     heroMeta: formatEventPeriod(dto.startDate, dto.endDate),
-    detailTitle: dto.couponName,
+    detailTitle: couponTitle,
     detailCopy: "쿠폰을 받으면 마이페이지 쿠폰함에 바로 추가됩니다.",
     href: buildEventHref(targetValue),
     targetLabel,

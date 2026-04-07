@@ -151,7 +151,7 @@ function mapEventDto(dto) {
 function mapCouponDto(dto) {
   const status = dto.status ?? "INACTIVE";
   const discountLabel =
-    dto.discountType === "RATE"
+    dto.discountType === "PERCENT"
       ? `${Number(dto.discountValue ?? 0)}% 쿠폰`
       : `${Number(dto.discountValue ?? 0).toLocaleString()}원 쿠폰`;
 
@@ -169,7 +169,7 @@ function mapCouponDto(dto) {
     content: "",
     startDate: dto.startDate ?? "",
     endDate: dto.endDate ?? "",
-    discountType: dto.discountType ?? "AMOUNT",
+    discountType: dto.discountType ?? "PERCENT",
     discountValue: dto.discountValue ?? 0,
     adminUser: dto.adminUser ?? 1,
   };
@@ -438,7 +438,7 @@ export async function createAdminCoupon(payload) {
   const response = await post("/api/coupon", {
     adminUser: Number(session?.userNo ?? 1),
     couponName: payload.title,
-    discountType: payload.discountType,
+    discountType: "PERCENT",
     discountValue: Number(payload.discountValue),
     startDate: payload.startDate,
     endDate: payload.endDate,
@@ -488,8 +488,8 @@ export async function saveAdminEvent(eventId, draft, currentEvent, imageFile = n
     await patch(`/api/coupon/${currentEvent.entityNo}`, {
       adminUser: currentEvent.adminUser,
       couponName: draft.title,
-      discountType: currentEvent.discountType,
-      discountValue: currentEvent.discountValue,
+      discountType: "PERCENT",
+      discountValue: Number(draft.discountValue),
       startDate: draft.startDate,
       endDate: draft.endDate,
       status: currentEvent.status ?? "INACTIVE",

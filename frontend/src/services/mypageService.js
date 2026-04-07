@@ -216,11 +216,17 @@ export async function getMyBookings() {
   return response.items ?? [];
 }
 
+function normalizeBookingKey(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  return raw.replace(/^B-/, "");
+}
+
 export async function getMyBookingById(bookingId) {
   const rows = await getMyBookings();
   return rows.find((item) =>
-    String(item.bookingId) === String(bookingId) ||
-    String(item.bookingNo) === String(bookingId)
+    normalizeBookingKey(item.bookingId) === normalizeBookingKey(bookingId) ||
+    normalizeBookingKey(item.bookingNo) === normalizeBookingKey(bookingId)
   ) ?? null;
 }
 
@@ -232,8 +238,8 @@ export async function getMyPayments() {
 export async function getMyPaymentByBookingId(bookingId) {
   const rows = await getMyPayments();
   return rows.find((item) =>
-    String(item.bookingId) === String(bookingId) ||
-    String(item.bookingNo) === String(bookingId)
+    normalizeBookingKey(item.bookingId) === normalizeBookingKey(bookingId) ||
+    normalizeBookingKey(item.bookingNo) === normalizeBookingKey(bookingId)
   ) ?? null;
 }
 

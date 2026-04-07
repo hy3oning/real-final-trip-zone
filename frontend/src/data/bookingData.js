@@ -15,9 +15,9 @@ export const bookingGuestOptions = [1, 2, 3, 4];
 
 export const bookingPaymentOptions = [
   { label: "신용/체크카드", value: "CARD", pg: "KG이니시스" },
-  { label: "카카오페이", value: "KAKAOPAY", pg: "카카오페이" },
-  { label: "네이버페이", value: "NAVERPAY", pg: "네이버페이" },
-  { label: "무통장입금", value: "BANK", pg: "가상계좌" },
+  { label: "카카오페이", value: "EASY_PAY", pg: "카카오페이" },
+  { label: "네이버페이", value: "EASY_PAY", pg: "네이버페이" },
+  { label: "무통장입금", value: "VIRTUAL_ACCOUNT", pg: "가상계좌" },
 ];
 
 export const bookingStatusNotes = [

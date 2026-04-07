@@ -1251,6 +1251,10 @@
   font-weight: 700;
 }
 
+.admin-events-notice {
+  margin-bottom: 16px;
+}
+
 .dash-create-form-actions .dash-action-btn.is-primary {
   min-width: 148px;
 }
@@ -3755,6 +3759,50 @@
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(13, 111, 104, 0.1);
   outline: none;
+}
+
+.saas-static-field {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 10px 14px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0f766e;
+}
+
+.saas-inline-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.saas-inline-input input {
+  width: 100%;
+}
+
+.saas-inline-suffix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 46px;
+  min-height: 46px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: #eef6f4;
+  color: #0f766e;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.saas-datetime-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 148px;
+  gap: 10px;
 }
 
 .saas-file-picker {

@@ -40,6 +40,29 @@ const EVENT_TARGET_OPTIONS = [
   })),
 ];
 
+function splitDateTime(value) {
+  if (!value) {
+    return { date: "", time: "14:00" };
+  }
+
+  const normalized = value.includes("T") ? value : value.replace(" ", "T");
+  const [date = "", rawTime = "14:00"] = normalized.split("T");
+  return { date, time: rawTime.slice(0, 5) || "14:00" };
+}
+
+function mergeDateTime(date, time) {
+  if (!date) return "";
+  return `${date}T${time || "14:00"}`;
+}
+
+function hasInvalidDateRange(startDate, endDate) {
+  if (!startDate || !endDate) return false;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
+  return end <= start;
+}
+
 export default function AdminEventsPage() {
   const [rows, setRows] = useState([]);
   const [section, setSection] = useState("EVENT");
@@ -125,8 +148,8 @@ export default function AdminEventsPage() {
       targetValue: target.targetValue ?? "theme=deal",
       startDate: target.startDate ? target.startDate.slice(0, 16) : "",
       endDate: target.endDate ? target.endDate.slice(0, 16) : "",
-      discountType: target.discountType ?? "AMOUNT",
-      discountValue: String(target.discountValue ?? 10000),
+      discountType: "PERCENT",
+      discountValue: String(target.discountValue ?? 10),
       status: target.status ?? "DRAFT",
     });
     setUploadFile(null);
@@ -143,8 +166,8 @@ export default function AdminEventsPage() {
       targetValue: "theme=deal",
       startDate: "",
       endDate: "",
-      discountType: "AMOUNT",
-      discountValue: "10000",
+      discountType: "PERCENT",
+      discountValue: "10",
       status: section === "EVENT" ? "DRAFT" : "INACTIVE",
     });
   };
@@ -169,6 +192,10 @@ export default function AdminEventsPage() {
       setNotice("운영 기간을 입력해 주세요.");
       return;
     }
+    if (hasInvalidDateRange(draft.startDate, draft.endDate)) {
+      setNotice("종료 일시는 시작 일시보다 늦어야 합니다.");
+      return;
+    }
     if (mode === "create" && section === "EVENT" && !uploadFile) {
       setNotice("신규 이벤트 이미지를 첨부해 주세요.");
       return;
@@ -188,13 +215,16 @@ export default function AdminEventsPage() {
       } else if (selectedEvent) {
         const updatedEvent = await saveAdminEvent(selectedEvent.id, draft, selectedEvent, uploadFile);
         setRows((current) => current.map((row) => (row.id === updatedEvent.id ? updatedEvent : row)));
-        setNotice("이벤트 정보를 저장했습니다.");
+        setNotice(selectedEvent.entityType === "COUPON" ? "쿠폰 정보를 저장했습니다." : "이벤트 정보를 저장했습니다.");
       }
       setUploadFile(null);
     } catch (error) {
       setNotice(toUserFacingErrorMessage(error, section === "COUPON" ? "쿠폰 저장에 실패했습니다." : "이벤트 저장에 실패했습니다."));
     }
   };
+
+  const startField = splitDateTime(draft.startDate);
+  const endField = splitDateTime(draft.endDate);
 
   const handleDelete = async () => {
     if (!selectedEvent || mode === "create") return;
@@ -221,7 +251,6 @@ export default function AdminEventsPage() {
 
   return (
     <DashboardLayout role="admin">
-      {notice ? <div className="my-empty-inline">{notice}</div> : null}
       <div className="saas-bento-split seller-crud-split">
         <section className="saas-bento-panel seller-crud-table-section">
           <div className="saas-form-actions saas-form-actions-start">
@@ -253,6 +282,7 @@ export default function AdminEventsPage() {
             <strong>{mode === "create" ? `${section === "EVENT" ? "신규 이벤트" : "신규 쿠폰"} 등록` : selectedEvent?.title ?? "이벤트를 선택해 주세요"}</strong>
             {selectedEvent && mode !== "create" ? <p>{selectedEvent.entityType === "COUPON" ? "쿠폰" : "이벤트"} · {selectedEvent.period}</p> : null}
           </div>
+          {notice ? <p className="dash-form-notice admin-events-notice">{notice}</p> : null}
           <div className="dash-chips">
             <span className="dash-chip is-accent">노출 {rows.filter((row) => isVisibleStatus(row.status)).length}건</span>
             <span className="dash-chip is-warning">초안 {rows.filter((row) => isDraftStatus(row.status)).length}건</span>
@@ -281,14 +311,20 @@ export default function AdminEventsPage() {
               <>
                 <label className="saas-field">
                   <span>할인 방식</span>
-                  <select value={draft.discountType} onChange={(event) => setDraft((current) => ({ ...current, discountType: event.target.value }))}>
-                    <option value="AMOUNT">정액</option>
-                    <option value="RATE">정률</option>
-                  </select>
+                  <div className="saas-static-field">% 할인 고정</div>
                 </label>
                 <label className="saas-field">
                   <span>할인 값</span>
-                  <input type="number" min="0" value={draft.discountValue} onChange={(event) => setDraft((current) => ({ ...current, discountValue: event.target.value }))} />
+                  <div className="saas-inline-input">
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={draft.discountValue}
+                      onChange={(event) => setDraft((current) => ({ ...current, discountType: "PERCENT", discountValue: event.target.value }))}
+                    />
+                    <span className="saas-inline-suffix">%</span>
+                  </div>
                 </label>
               </>
             ) : (
@@ -305,11 +341,33 @@ export default function AdminEventsPage() {
             )}
             <label className="saas-field">
               <span>시작 일시</span>
-              <input type="datetime-local" value={draft.startDate} onChange={(event) => setDraft((current) => ({ ...current, startDate: event.target.value }))} />
+              <div className="saas-datetime-row">
+                <input
+                  type="date"
+                  value={startField.date}
+                  onChange={(event) => setDraft((current) => ({ ...current, startDate: mergeDateTime(event.target.value, startField.time) }))}
+                />
+                <input
+                  type="time"
+                  value={startField.time}
+                  onChange={(event) => setDraft((current) => ({ ...current, startDate: mergeDateTime(startField.date, event.target.value) }))}
+                />
+              </div>
             </label>
             <label className="saas-field">
               <span>종료 일시</span>
-              <input type="datetime-local" value={draft.endDate} onChange={(event) => setDraft((current) => ({ ...current, endDate: event.target.value }))} />
+              <div className="saas-datetime-row">
+                <input
+                  type="date"
+                  value={endField.date}
+                  onChange={(event) => setDraft((current) => ({ ...current, endDate: mergeDateTime(event.target.value, endField.time) }))}
+                />
+                <input
+                  type="time"
+                  value={endField.time}
+                  onChange={(event) => setDraft((current) => ({ ...current, endDate: mergeDateTime(endField.date, event.target.value) }))}
+                />
+              </div>
             </label>
             {section === "EVENT" ? (
               <label className="saas-field">
